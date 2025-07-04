@@ -2,7 +2,7 @@
 
 // Базовый URL API
 // const API_URL = 'http://127.0.0.1:8000/api/v1/';  
-const API_URL = 'https://makarsoda.pythonanywhere.com/api/v1/';  
+const API_URL = 'https://makarsoda.pythonanywhere.com/api/v1/';
 // const API_URL = 'http://mmpysh9z.beget.tech/api/v1/';
 
 
