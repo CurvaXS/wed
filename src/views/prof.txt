@@ -1,0 +1,881 @@
+<template>
+    <!-- Profile Hero Section -->
+    <section class="hero-gradient py-12 text-white">
+        <div class="container mx-auto px-4">
+            <div class="flex flex-col md:flex-row items-center gap-6">
+                <!-- Couple Avatar -->
+                <div class="relative">
+                    <div class="w-32 h-32 md:w-40 md:h-40 rounded-full bg-white flex items-center justify-center overflow-hidden couple-avatar">
+                        <div v-if="coupleProfile.avatar" class="w-full h-full">
+                            <img :src="coupleProfile.avatar" alt="Фото пары" class="w-full h-full object-cover">
+                        </div>
+                        <div v-else class="w-full h-full bg-gradient-to-r from-pink-300 to-blue-300 flex items-center justify-center">
+                            <span class="text-4xl">👰‍♀️🤵‍♂️</span>
+                        </div>
+                    </div>
+                    <button @click="showPhotoUploadModal = true" class="absolute bottom-0 right-0 bg-pink-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-md hover:bg-pink-700 transition">
+                        <i class="fas fa-camera text-sm"></i>
+                    </button>
+                </div>
+                
+                <!-- Couple Info -->
+                <div class="flex-1">
+                    <h1 class="text-3xl font-bold mb-2">{{ coupleProfile.brideName }} и {{ coupleProfile.groomName }}</h1>
+                    <p class="text-lg opacity-80">Свадьба {{ new Date(weddingDetails.date).toLocaleDateString('ru-RU') }}</p>
+                </div>
+
+                <!-- Stats -->
+                <div class="md:ml-auto bg-white bg-opacity-20 rounded-xl p-6">
+                    <div class="grid grid-cols-3 gap-4 text-center">
+                        <div>
+                            <div class="text-2xl font-bold">127</div>
+                            <div class="text-sm">дней до свадьбы</div>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-bold">42%</div>
+                            <div class="text-sm">готовности</div>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-bold">85</div>
+                            <div class="text-sm">гостей</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Profile Content -->
+    <section class="py-12 bg-white">
+        <div class="container mx-auto px-4">
+            <!-- Tabs -->
+            <div class="border-b border-gray-200 mb-8">
+                <nav class="flex space-x-8">
+                    <button class="tab-active py-4 px-1 text-sm font-medium border-b-2 border-pink-500 text-pink-600">Профиль</button>
+                    <button class="text-gray-500 hover:text-gray-700 py-4 px-1 text-sm font-medium">Наша история</button>
+                    <button class="text-gray-500 hover:text-gray-700 py-4 px-1 text-sm font-medium">Фото</button>
+                    <button class="text-gray-500 hover:text-gray-700 py-4 px-1 text-sm font-medium">Гости</button>
+                    <button class="text-gray-500 hover:text-gray-700 py-4 px-1 text-sm font-medium">Поставщики</button>
+                </nav>
+            </div>
+            
+            <!-- Profile Content -->
+            <div class="flex flex-col lg:flex-row gap-8">
+                <!-- Left Column -->
+                <div class="lg:w-1/3">
+                    <!-- About Us -->
+                    <div class="bg-gray-50 rounded-xl p-6 mb-8">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold">О нас</h2>
+                            <button @click="openEditProfile" class="text-pink-500 hover:text-pink-700 text-sm font-medium flex items-center">
+                                <i class="fas fa-edit mr-1"></i> Редактировать
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <h3 class="font-medium text-gray-500 mb-1">История знакомства</h3>
+                                <p class="text-sm">{{ coupleProfile.aboutUs }}</p>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-gray-500 mb-1">Мы познакомились</h3>
+                                <p>15 августа 2020 года на дне рождения общего друга</p>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-gray-500 mb-1">Предложение</h3>
+                                <p>Михаил сделал предложение 14 февраля 2023 года в Париже</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Wedding Details -->
+                    <div class="bg-gray-50 rounded-xl p-6 mb-8">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold">Детали свадьбы</h2>
+                            <button @click="openEditWeddingDetails" class="text-pink-500 hover:text-pink-700 text-sm font-medium flex items-center">
+                                <i class="fas fa-edit mr-1"></i> Редактировать
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <h3 class="font-medium text-gray-500 mb-1">Дата и время</h3>
+                                <p>{{ new Date(weddingDetails.date).toLocaleDateString('ru-RU') }} в {{ weddingDetails.time }}</p>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-gray-500 mb-1">Место проведения</h3>
+                                <p>{{ weddingDetails.venue }}</p>
+                                <p class="text-sm text-gray-400">{{ weddingDetails.address }}</p>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-gray-500 mb-1">Дресс-код</h3>
+                                <p>{{ weddingDetails.dressCode }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Wedding Team -->
+                    <div class="bg-gray-50 rounded-xl p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold">Наша команда</h2>
+                            <button @click="openAddTeamMember" class="text-pink-500 hover:text-pink-700 text-sm font-medium flex items-center">
+                                <i class="fas fa-plus-circle mr-1"></i> Добавить
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <div v-for="member in visibleTeamMembers" :key="member.id" class="flex items-center p-2 hover:bg-gray-100 rounded-lg transition group">
+                                <div :class="`w-10 h-10 rounded-full bg-${member.color}-100 flex items-center justify-center text-${member.color}-500 mr-3`">
+                                    <i :class="`fas fa-${member.icon}`"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <h3 class="font-medium">{{ member.name }}</h3>
+                                    <p class="text-sm text-gray-500">{{ member.role }}</p>
+                                </div>
+                                <div class="opacity-0 group-hover:opacity-100 transition">
+                                    <button @click="openEditTeamMember(member)" class="text-gray-400 hover:text-blue-500 mr-2">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button @click="removeTeamMember(member.id)" class="text-gray-400 hover:text-red-500">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div v-if="teamMembers.length > 3" class="text-center pt-2">
+                                <button @click="toggleTeamMembersVisibility" class="text-pink-500 hover:text-pink-700 text-sm font-medium">
+                                    <span v-if="!showAllTeamMembers">Показать всех ({{ teamMembers.length }}) <i class="fas fa-chevron-down ml-1"></i></span>
+                                    <span v-else>Скрыть <i class="fas fa-chevron-up ml-1"></i></span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right Column -->
+                <div class="lg:w-2/3">
+                    <!-- Status Update -->
+                    <div class="bg-gray-50 rounded-xl p-6 mb-8">
+                        <div class="flex items-start mb-4">
+                            <div class="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center text-pink-500 mr-3">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <div class="flex-1">
+                                <textarea v-model="newPost.content" class="w-full border border-gray-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-pink-300" rows="3" placeholder="Расскажите, как идут приготовления к свадьбе..."></textarea>
+                                
+                                <!-- Предпросмотр изображения -->
+                                <div v-if="newPost.image" class="mt-3 relative">
+                                    <img :src="newPost.image" alt="Предпросмотр" class="max-h-40 rounded-lg">
+                                    <button @click="removePostImage" class="absolute top-2 right-2 bg-gray-800 bg-opacity-70 text-white w-6 h-6 rounded-full flex items-center justify-center text-xs">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                
+                                <div class="flex justify-between items-center mt-3">
+                                    <div class="flex space-x-2">
+                                        <button @click="toggleEmojiPicker" class="text-gray-400 hover:text-pink-500">
+                                            <i class="far fa-smile text-xl"></i>
+                                        </button>
+                                        <label class="text-gray-400 hover:text-pink-500 cursor-pointer">
+                                            <i class="fas fa-camera text-xl"></i>
+                                            <input type="file" @change="addPostImage" accept="image/*" class="hidden">
+                                        </label>
+                                    </div>
+                                    <button @click="publishPost" class="bg-pink-500 text-white px-4 py-2 rounded-full hover:bg-pink-600 transition" :disabled="!newPost.content.trim()">
+                                        Опубликовать
+                                    </button>
+                                </div>
+                                
+                                <!-- Emoji Picker -->
+                                <div v-show="emojiPickerVisible" class="mt-3 bg-white border rounded-lg p-3 shadow-lg">
+                                    <div class="grid grid-cols-8 gap-1">
+                                        <span v-for="emoji in ['😊', '❤️', '🎉', '👰', '🤵', '💍', '💐', '🍾', '💖', '🥂', '🎊', '💒', '🌹', '💕', '✨', '🎭']" 
+                                              :key="emoji" 
+                                              @click="addEmoji(emoji)" 
+                                              class="text-xl cursor-pointer hover:scale-125 transition p-1 rounded hover:bg-gray-100">
+                                            {{ emoji }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Updates Feed -->
+                    <div class="space-y-6">
+                        <div v-for="post in posts" :key="post.id" class="bg-gray-50 rounded-xl p-6">
+                            <div class="flex items-start mb-4">
+                                <div class="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center text-pink-500 mr-3">
+                                    <i class="fas fa-heart"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold">{{ post.author }}</h3>
+                                    <p class="text-sm text-gray-500">{{ formatDate(post.date) }}</p>
+                                </div>
+                            </div>
+                            <p class="mb-4">{{ post.content }}</p>
+                            
+                            <!-- Post Image -->
+                            <div v-if="post.image" class="photo-grid mb-4">
+                                <div class="aspect-w-16 aspect-h-9 bg-pink-100 rounded-lg overflow-hidden">
+                                    <img :src="post.image" alt="Фото поста" class="w-full h-full object-cover">
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center text-gray-500">
+                                <button @click="likePost(post)" class="flex items-center mr-4 hover:text-pink-500 transition">
+                                    <i class="far fa-heart mr-1"></i> {{ post.likes }}
+                                </button>
+                                <button class="flex items-center hover:text-pink-500 transition">
+                                    <i class="far fa-comment mr-1"></i> {{ post.comments.length }}
+                                </button>
+                            </div>
+                            
+                            <!-- Comments -->
+                            <div v-if="post.comments.length > 0" class="mt-4 space-y-3">
+                                <div v-for="comment in post.comments" :key="comment.id" class="flex items-start">
+                                    <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 mr-2">
+                                        <i class="fas fa-user text-xs"></i>
+                                    </div>
+                                    <div class="bg-white p-3 rounded-lg flex-1">
+                                        <h4 class="font-bold text-sm">{{ comment.author }}</h4>
+                                        <p class="text-sm">{{ comment.text }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Load More -->
+                        <div class="text-center">
+                            <button class="text-pink-500 hover:text-pink-700 font-medium">
+                                <i class="fas fa-sync-alt mr-2"></i> Загрузить еще
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal: Photo Upload -->
+    <div v-if="showPhotoUploadModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg max-w-md w-full p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Загрузить фото</h3>
+                <button @click="showPhotoUploadModal = false" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div v-if="photoPreview" class="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
+                    <img :src="photoPreview" alt="Предпросмотр" class="w-full h-full object-cover">
+                    <button @click="photoPreview = null" class="absolute top-2 right-2 bg-gray-800 bg-opacity-70 text-white w-8 h-8 rounded-full flex items-center justify-center">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div v-else class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                    <i class="fas fa-upload text-gray-400 text-3xl mb-2"></i>
+                    <p class="text-gray-600 mb-4">Перетащите фото сюда или нажмите для выбора</p>
+                    <label class="bg-pink-500 text-white px-4 py-2 rounded-lg hover:bg-pink-600 transition cursor-pointer">
+                        Выбрать фото
+                        <input type="file" @change="handlePhotoUpload" accept="image/*" class="hidden">
+                    </label>
+                </div>
+                
+                <div class="flex justify-end space-x-3">
+                    <button @click="showPhotoUploadModal = false" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition">
+                        Отмена
+                    </button>
+                    <button @click="uploadProfilePhoto" class="bg-pink-500 text-white px-4 py-2 rounded-lg hover:bg-pink-600 transition" :disabled="!photoPreview" :class="{'opacity-50 cursor-not-allowed': !photoPreview}">
+                        Сохранить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Edit Profile -->
+    <div v-if="showEditProfileModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg max-w-lg w-full p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Редактировать профиль</h3>
+                <button @click="showEditProfileModal = false" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Имя невесты</label>
+                    <input v-model="editedProfile.brideName" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Имя жениха</label>
+                    <input v-model="editedProfile.groomName" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">История знакомства</label>
+                    <textarea v-model="editedProfile.aboutUs" rows="4" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300"></textarea>
+                </div>
+                
+                <div class="flex justify-end space-x-3">
+                    <button @click="showEditProfileModal = false" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition">
+                        Отмена
+                    </button>
+                    <button @click="saveProfileInfo" class="bg-pink-500 text-white px-4 py-2 rounded-lg hover:bg-pink-600 transition">
+                        Сохранить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Edit Wedding Details -->
+    <div v-if="showEditWeddingDetailsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg max-w-lg w-full p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">Редактировать детали свадьбы</h3>
+                <button @click="showEditWeddingDetailsModal = false" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Дата свадьбы</label>
+                    <input v-model="editedWeddingDetails.date" type="date" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Время</label>
+                    <input v-model="editedWeddingDetails.time" type="time" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Место проведения</label>
+                    <input v-model="editedWeddingDetails.venue" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Адрес</label>
+                    <input v-model="editedWeddingDetails.address" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Дресс-код</label>
+                    <input v-model="editedWeddingDetails.dressCode" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300">
+                </div>
+                
+                <div class="flex justify-end space-x-3">
+                    <button @click="showEditWeddingDetailsModal = false" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition">
+                        Отмена
+                    </button>
+                    <button @click="saveWeddingDetails" class="bg-pink-500 text-white px-4 py-2 rounded-lg hover:bg-pink-600 transition">
+                        Сохранить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Team Member -->
+    <div v-if="showTeamMemberModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg max-w-lg w-full p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold">{{ editingTeamMember ? 'Редактировать' : 'Добавить' }} члена команды</h3>
+                <button @click="showTeamMemberModal = false" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Имя</label>
+                    <input v-model="editedTeamMember.name" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Роль</label>
+                    <input v-model="editedTeamMember.role" type="text" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Иконка</label>
+                    <select v-model="editedTeamMember.icon" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300">
+                        <option value="camera-retro">Фотограф</option>
+                        <option value="video">Видеограф</option>
+                        <option value="utensils">Ресторан</option>
+                        <option value="music">Музыка</option>
+                        <option value="ring">Свидетель</option>
+                        <option value="magic">Декор</option>
+                        <option value="car">Транспорт</option>
+                        <option value="flower">Флористика</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Цвет</label>
+                    <select v-model="editedTeamMember.color" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300">
+                        <option value="blue">Синий</option>
+                        <option value="green">Зеленый</option>
+                        <option value="purple">Фиолетовый</option>
+                        <option value="pink">Розовый</option>
+                        <option value="yellow">Желтый</option>
+                        <option value="indigo">Индиго</option>
+                        <option value="red">Красный</option>
+                    </select>
+                </div>
+                
+                <div class="flex justify-end space-x-3">
+                    <button @click="showTeamMemberModal = false" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition">
+                        Отмена
+                    </button>
+                    <button @click="saveTeamMember" class="bg-pink-500 text-white px-4 py-2 rounded-lg hover:bg-pink-600 transition">
+                        Сохранить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script setup>
+import { ref, computed } from 'vue';
+
+// Состояние профиля пары
+const coupleProfile = ref({
+    avatar: null,
+    brideName: 'Анна',
+    groomName: 'Михаил',
+    aboutUs: 'Мы познакомились 3 года назад и вот, наконец, решили связать себя узами брака! Нас объединяют общие интересы, ценности и мечты. Мы любим путешествовать, пробовать новые блюда и проводить вечера за интересными разговорами. Наша свадьба будет отражением нашей любви и индивидуальности.'
+});
+
+// Состояние деталей свадьбы
+const weddingDetails = ref({
+    date: '2024-06-15',
+    time: '15:00',
+    venue: 'Ресторан "Лебедь"',
+    address: 'ул. Озерная, 7',
+    dressCode: 'Коктейльный наряд'
+});
+
+// Состояние членов команды
+const teamMembers = ref([
+    { id: 1, name: 'Иван Петров', role: 'Фотограф', icon: 'camera-retro', color: 'blue' },
+    { id: 2, name: 'Ресторан "Лебедь"', role: 'Место проведения', icon: 'utensils', color: 'green' },
+    { id: 3
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<template>
+    
+<!-- Profile Hero Section -->
+<section class="hero-gradient py-12 text-white">
+    <div class="container mx-auto px-4">
+        <div class="flex flex-col md:flex-row items-center gap-6">
+            <!-- Couple Avatar -->
+            <div class="relative">
+                <div class="w-32 h-32 md:w-40 md:h-40 rounded-full bg-white flex items-center justify-center overflow-hidden couple-avatar">
+                    <div v-if="coupleProfile.avatar" class="w-full h-full">
+                        <img :src="coupleProfile.avatar" alt="Фото пары" class="w-full h-full object-cover">
+                    </div>
+                    <div v-else class="w-full h-full bg-gradient-to-r from-pink-300 to-blue-300 flex items-center justify-center">
+                        <span class="text-4xl">👰‍♀️🤵‍♂️</span>
+                    </div>
+                </div>
+                <button @click="showPhotoUploadModal = true" class="absolute bottom-0 right-0 bg-pink-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-md hover:bg-pink-700 transition">
+                    <i class="fas fa-camera text-sm"></i>
+                </button>
+            </div>
+            
+            <!-- Couple Info -->
+            <div class="flex-1">
+                <h1 class="text-3xl font-bold mb-2">{{ coupleProfile.brideName }} и {{ coupleProfile.groomName }}</h1>
+                <p class="text-lg opacity-80">Свадьба {{ new Date(weddingDetails.date).toLocaleDateString('ru-RU') }}</p>
+            </div>
+
+            <!-- Stats -->
+            <div class="md:ml-auto bg-white bg-opacity-20 rounded-xl p-6">
+                    <div class="grid grid-cols-3 gap-4 text-center">
+                        <div>
+                            <div class="text-2xl font-bold">127</div>
+                            <div class="text-sm">дней до свадьбы</div>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-bold">42%</div>
+                            <div class="text-sm">готовности</div>
+                        </div>
+                        <div>
+                            <div class="text-2xl font-bold">85</div>
+                            <div class="text-sm">гостей</div>
+                        </div>
+                    </div>
+                </div>
+        </div>
+    </div>
+</section>
+
+<!-- Profile Content -->
+<section class="py-12 bg-white">
+        <div class="container mx-auto px-4">
+            <!-- Tabs -->
+            <div class="border-b border-gray-200 mb-8">
+                <nav class="flex space-x-8">
+                    <button class="tab-active py-4 px-1 text-sm font-medium">Профиль</button>
+                    <button class="text-gray-500 hover:text-gray-700 py-4 px-1 text-sm font-medium">Наша история</button>
+                    <button class="text-gray-500 hover:text-gray-700 py-4 px-1 text-sm font-medium">Фото</button>
+                    <button class="text-gray-500 hover:text-gray-700 py-4 px-1 text-sm font-medium">Гости</button>
+                    <button class="text-gray-500 hover:text-gray-700 py-4 px-1 text-sm font-medium">Поставщики</button>
+                </nav>
+            </div>
+            
+            <!-- Profile Content -->
+            <div class="flex flex-col lg:flex-row gap-8">
+                <!-- Left Column -->
+                <div class="lg:w-1/3">
+                    <!-- About Us -->
+                    <div class="bg-gray-50 rounded-xl p-6 mb-8">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold">О нас</h2>
+                            <button class="text-pink-500 hover:text-pink-700 text-sm font-medium flex items-center">
+                                <i class="fas fa-edit mr-1"></i> Редактировать
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <h3 class="font-medium text-gray-500 mb-1">Мы познакомились</h3>
+                                <p>15 августа 2020 года на дне рождения общего друга</p>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-gray-500 mb-1">Предложение</h3>
+                                <p>Михаил сделал предложение 14 февраля 2023 года в Париже</p>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-gray-500 mb-1">Наша свадьба</h3>
+                                <p>Планируем праздник на 85 человек в ресторане "Лебедь"</p>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-gray-500 mb-1">Наш девиз</h3>
+                                <p>"Вместе в радости и в горе"</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Wedding Details -->
+                    <div class="bg-gray-50 rounded-xl p-6 mb-8">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold">Детали свадьбы</h2>
+                            <button class="text-pink-500 hover:text-pink-700 text-sm font-medium flex items-center">
+                                <i class="fas fa-edit mr-1"></i> Редактировать
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <h3 class="font-medium text-gray-500 mb-1">Дата свадьбы</h3>
+                                <p>15 июня 2024 года</p>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-gray-500 mb-1">Место проведения</h3>
+                                <p>Ресторан "Лебедь", Москва, ул. Свадебная, 15</p>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-gray-500 mb-1">Количество гостей</h3>
+                                <p>85 человек</p>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-gray-500 mb-1">Стиль свадьбы</h3>
+                                <p>Классическая свадьба с элементами бохо</p>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-gray-500 mb-1">Цветовая гамма</h3>
+                                <div class="flex gap-2 mt-1">
+                                    <span class="w-6 h-6 rounded-full bg-pink-300"></span>
+                                    <span class="w-6 h-6 rounded-full bg-blue-300"></span>
+                                    <span class="w-6 h-6 rounded-full bg-white border border-gray-300"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Wedding Team -->
+                    <div class="bg-gray-50 rounded-xl p-6">
+                        <div class="flex justify-between items-center mb-4">
+                            <h2 class="text-xl font-bold">Наша команда</h2>
+                            <button class="text-pink-500 hover:text-pink-700 text-sm font-medium flex items-center">
+                                <i class="fas fa-plus-circle mr-1"></i> Добавить
+                            </button>
+                        </div>
+                        
+                        <div class="space-y-3">
+                            <div class="flex items-center p-2 hover:bg-gray-100 rounded-lg transition">
+                                <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-500 mr-3">
+                                    <i class="fas fa-camera-retro"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-medium">Иван Петров</h3>
+                                    <p class="text-sm text-gray-500">Фотограф</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center p-2 hover:bg-gray-100 rounded-lg transition">
+                                <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-500 mr-3">
+                                    <i class="fas fa-utensils"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-medium">Ресторан "Лебедь"</h3>
+                                    <p class="text-sm text-gray-500">Место проведения</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center p-2 hover:bg-gray-100 rounded-lg transition">
+                                <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center text-purple-500 mr-3">
+                                    <i class="fas fa-music"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-medium">Алексей Семенов</h3>
+                                    <p class="text-sm text-gray-500">Ведущий</p>
+                                </div>
+                            </div>
+                            <div class="text-center pt-2">
+                                <button class="text-pink-500 hover:text-pink-700 text-sm font-medium">
+                                    Показать всех (7) <i class="fas fa-chevron-down ml-1"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Right Column -->
+                <div class="lg:w-2/3">
+                    <!-- Status Update -->
+                    <div class="bg-gray-50 rounded-xl p-6 mb-8">
+                        <div class="flex items-start mb-4">
+                            <div class="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center text-pink-500 mr-3">
+                                <i class="fas fa-heart"></i>
+                            </div>
+                            <div class="flex-1">
+                                <textarea class="w-full border border-gray-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-pink-300" rows="3" placeholder="Расскажите, как идут приготовления к свадьбе..."></textarea>
+                                <div class="flex justify-between items-center mt-3">
+                                    <div class="flex space-x-2">
+                                        <button class="text-gray-400 hover:text-pink-500" id="emoji-button">
+                                            <i class="far fa-smile text-xl"></i>
+                                        </button>
+                                        <button class="text-gray-400 hover:text-pink-500">
+                                            <i class="fas fa-camera text-xl"></i>
+                                        </button>
+                                    </div>
+                                    <button class="bg-pink-500 text-white px-4 py-2 rounded-full hover:bg-pink-600 transition">
+                                        Опубликовать
+                                    </button>
+                                </div>
+                                <div class="emoji-picker" id="emoji-picker">
+                                    <div class="grid grid-cols-8 gap-1">
+                                        <span class="text-xl cursor-pointer hover:scale-125 transition">😊</span>
+                                        <span class="text-xl cursor-pointer hover:scale-125 transition">❤️</span>
+                                        <span class="text-xl cursor-pointer hover:scale-125 transition">🎉</span>
+                                        <span class="text-xl cursor-pointer hover:scale-125 transition">👰</span>
+                                        <span class="text-xl cursor-pointer hover:scale-125 transition">🤵</span>
+                                        <span class="text-xl cursor-pointer hover:scale-125 transition">💍</span>
+                                        <span class="text-xl cursor-pointer hover:scale-125 transition">💐</span>
+                                        <span class="text-xl cursor-pointer hover:scale-125 transition">🍾</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Updates Feed -->
+                    <div class="space-y-6">
+                        <!-- Update 1 -->
+                        <div class="bg-gray-50 rounded-xl p-6">
+                            <div class="flex items-start mb-4">
+                                <div class="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center text-pink-500 mr-3">
+                                    <i class="fas fa-heart"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold">Анна</h3>
+                                    <p class="text-sm text-gray-500">2 часа назад</p>
+                                </div>
+                            </div>
+                            <p class="mb-4">Наконец-то выбрали и заказали мое свадебное платье! 👰‍♀️ Это было непросто, но результат того стоит. Не могу дождаться, когда его примерю снова перед свадьбой. 💖</p>
+                            <div class="photo-grid mb-4">
+                                <div class="aspect-w-16 aspect-h-9 bg-pink-100 rounded-lg overflow-hidden">
+                                    <img src="https://images.unsplash.com/photo-1537832816519-689ad163238b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80" alt="Свадебное платье" class="w-full h-full object-cover">
+                                </div>
+                            </div>
+                            <div class="flex items-center text-gray-500">
+                                <button class="flex items-center mr-4 hover:text-pink-500">
+                                    <i class="far fa-heart mr-1"></i> 12
+                                </button>
+                                <button class="flex items-center hover:text-pink-500">
+                                    <i class="far fa-comment mr-1"></i> 3
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Update 2 -->
+                        <div class="bg-gray-50 rounded-xl p-6">
+                            <div class="flex items-start mb-4">
+                                <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-500 mr-3">
+                                    <i class="fas fa-user-tie"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold">Михаил</h3>
+                                    <p class="text-sm text-gray-500">Вчера</p>
+                                </div>
+                            </div>
+                            <p class="mb-4">Забронировали ресторан для свадьбы! 🎉 Теперь точно знаем, где будем праздновать. Осталось определиться с меню на дегустацию. Кто-нибудь знает хорошего ведущего? 🤔</p>
+                            <div class="photo-grid mb-4">
+                                <div class="aspect-w-16 aspect-h-9 bg-blue-100 rounded-lg overflow-hidden">
+                                    <img src="https://images.unsplash.com/photo-1519671482749-fd09be7ccebf?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=500&q=80" alt="Ресторан" class="w-full h-full object-cover">
+                                </div>
+                            </div>
+                            <div class="flex items-center text-gray-500">
+                                <button class="flex items-center mr-4 hover:text-pink-500">
+                                    <i class="far fa-heart mr-1"></i> 8
+                                </button>
+                                <button class="flex items-center hover:text-pink-500">
+                                    <i class="far fa-comment mr-1"></i> 5
+                                </button>
+                            </div>
+                            
+                            <!-- Comments -->
+                            <div class="mt-4 space-y-3">
+                                <div class="flex items-start">
+                                    <div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 mr-2">
+                                        <i class="fas fa-user text-xs"></i>
+                                    </div>
+                                    <div class="bg-white p-3 rounded-lg flex-1">
+                                        <h4 class="font-bold text-sm">Мария (свидетельница)</h4>
+                                        <p class="text-sm">Я знаю отличного ведущего! Дала вам его контакты в личку 😊</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Update 3 -->
+                        <div class="bg-gray-50 rounded-xl p-6">
+                            <div class="flex items-start mb-4">
+                                <div class="w-12 h-12 rounded-full bg-pink-100 flex items-center justify-center text-pink-500 mr-3">
+                                    <i class="fas fa-heart"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold">Анна</h3>
+                                    <p class="text-sm text-gray-500">3 дня назад</p>
+                                </div>
+                            </div>
+                            <p class="mb-4">Сегодня подписали договор с фотографом! 📸 Очень рады, что нашли такого профессионала. Теперь точно знаем, что наши свадебные моменты будут запечатлены красиво. 💫</p>
+                            <div class="flex items-center text-gray-500">
+                                <button class="flex items-center mr-4 hover:text-pink-500">
+                                    <i class="far fa-heart mr-1"></i> 15
+                                </button>
+                                <button class="flex items-center hover:text-pink-500">
+                                    <i class="far fa-comment mr-1"></i> 2
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Load More -->
+                        <div class="text-center">
+                            <button class="text-pink-500 hover:text-pink-700 font-medium">
+                                <i class="fas fa-sync-alt mr-2"></i> Загрузить еще
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+<!-- Модальные окна для редактирования -->
+<div v-if="showPhotoUploadModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-lg max-w-md w-full p-6">
+        <div class="flex justify-between items-center mb-4">
+            <h3 class="text-xl font-bold">Загрузить фото</h3>
+            <button @click="showPhotoUploadModal = false" class="text-gray-500 hover:text-gray-700">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        
+        <div class="space-y-4">
+            <div v-if="photoPreview" class="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
+                <img :src="photoPreview" alt="Предпросмотр" class="w-full h-full object-cover">
+                <button @click="photoPreview = null" class="absolute top-2 right-2 bg-gray-800 bg-opacity-70 text-white w-8 h-8 rounded-full flex items-center justify-center">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div v-else class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                <i class="fas fa-upload text-gray-400 text-3xl mb-2"></i>
+                <p class="text-gray-600 mb-4">Перетащите фото сюда или нажмите для выбора</p>
+                <label class="bg-pink-500 text-white px-4 py-2 rounded-lg hover:bg-pink-600 transition cursor-pointer">
+                    Выбрать фото
+                    <input type="file" @change="handlePhotoUpload" accept="image/*" class="hidden">
+                </label>
+            </div>
+            
+            <div class="flex justify-end space-x-3">
+                <button @click="showPhotoUploadModal = false" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 transition">
+                    Отмена
+                </button>
+                <button @click="uploadProfilePhoto" class="bg-pink-500 text-white px-4 py-2 rounded-lg hover:bg-pink-600 transition" :disabled="!photoPreview" :class="{'opacity-50 cursor-not-allowed': !photoPreview}">
+                    Сохранить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+</template>
+
+
+А теперь в планировщике на вкладке
+http://127.0.0.1:8000/api/v1/users/profile/
+ {
+        "id": 1,
+        "bride_name": "Анна",
+        "groom_name": "Иван",
+        "about_us": "хахаха",
+        "wedding_date": "2025-05-26",
+        "budget": "200000.00",
+        "guest_count": 15,
+        "wedding_style": "classic",
+        "additional_info": "Дополнительная информация"
+    }

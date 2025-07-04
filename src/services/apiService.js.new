@@ -1,0 +1,190 @@
+// Настройка API
+const API_URL = 'http://127.0.0.1:8000/api/';
+
+// Базовая функция для выполнения запросов
+const apiRequest = async (endpoint, method = 'GET', data = null) => {
+  const url = `${API_URL}${endpoint}`;
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+  
+  // Добавляем токен авторизации, если он есть
+  const token = localStorage.getItem('token');
+  if (token) {
+    headers['Authorization'] = `Token ${token}`;
+  }
+  
+  // Настройки запроса
+  const options = {
+    method,
+    headers,
+  };
+  
+  // Добавляем тело запроса для методов, которые его поддерживают
+  if (data && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+    options.body = JSON.stringify(data);
+  }
+  
+  try {
+    const response = await fetch(url, options);
+    
+    // Если ответ не OK (не 2xx)
+    if (!response.ok) {
+      // Пытаемся получить текст ошибки из ответа
+      const errorData = await response.json().catch(() => ({}));
+      throw {
+        status: response.status,
+        message: errorData.detail || 'Произошла ошибка при выполнении запроса',
+        errors: errorData
+      };
+    }
+    
+    // Для DELETE запросов может не быть содержимого
+    if (method === 'DELETE') {
+      return null;
+    }
+    
+    // Парсим JSON для остальных запросов
+    const responseData = await response.json();
+    return responseData;
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
+};
+
+// Сервисы для работы с API
+const authService = {
+  login: (credentials) => apiRequest('auth/login/', 'POST', credentials),
+  register: (userData) => apiRequest('auth/register/', 'POST', userData),
+  logout: () => apiRequest('auth/logout/', 'POST'),
+  getCurrentUser: () => apiRequest('auth/user/'),
+  updateProfile: (profileData) => apiRequest('auth/user/', 'PATCH', profileData),
+  updateProfileImage: async (file) => {
+    const url = `${API_URL}auth/user/upload_avatar/`;
+    const token = localStorage.getItem('token');
+    
+    const formData = new FormData();
+    formData.append('avatar', file);
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${token}`
+      },
+      body: formData
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw {
+        status: response.status,
+        message: errorData.detail || 'Произошла ошибка при загрузке аватара',
+        errors: errorData
+      };
+    }
+    
+    return await response.json();
+  }
+};
+
+const catalogService = {
+  getSpecialists: (params = {}) => {
+    // Клонируем объект параметров, чтобы не изменять оригинальный
+    const paramsClone = { ...params };
+    
+    // Преобразуем числовые ID категорий в строковые коды из SPECIALIST_CATEGORIES
+    if (paramsClone.category) {
+      // Карта соответствия числовых ID и строковых кодов категорий
+      const categoryMapping = {
+        '1': 'photographer',    // Фотограф
+        '2': 'videographer',    // Видеограф
+        '3': 'caterer',         // Кейтеринг
+        '4': 'band',            // Музыка
+        '5': 'wedding_planner', // Организаторы
+        '6': 'hairstylist',     // Стилисты
+        '7': 'transport',       // Транспорт
+        '8': 'venue',           // Локации
+        '9': 'decorator',       // Декор
+        '10': 'cake',           // Торты
+        '11': 'accessories',    // Аренда/Аксессуары
+        '12': 'clothing',       // Костюмы/Свадебные наряды
+        '13': 'other'           // Другое
+      };
+      
+      // Получаем строковый код для выбранной категории
+      const categoryId = String(paramsClone.category);
+      const categoryCode = categoryMapping[categoryId];
+      
+      if (categoryCode) {
+        console.log(`Преобразование категории: ${categoryId} (число) -> ${categoryCode} (строка)`);
+        paramsClone.category = categoryCode;
+      } else {
+        console.log(`Невозможно преобразовать категорию: ${categoryId}`);
+      }
+    }
+    
+    const queryParams = new URLSearchParams();
+    
+    // Добавляем параметры фильтрации
+    Object.entries(paramsClone).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        queryParams.append(key, value);
+      }
+    });
+    
+    // Формируем URL для запроса
+    const apiUrl = queryParams.toString() 
+      ? `catalog/specialists?${queryParams.toString()}` 
+      : 'catalog/specialists/';
+    
+    console.log(`Отправляем запрос к: ${apiUrl}`);
+    return apiRequest(apiUrl);
+  },
+  getSpecialistById: (id) => apiRequest(`catalog/specialists/${id}/`),
+  getCategories: () => apiRequest('catalog/categories/'),
+  getCities: () => apiRequest('catalog/cities/'),
+  getFavorites: () => apiRequest('catalog/favorites/'),
+  addToFavorites: (specialistId) => apiRequest('catalog/favorites/', 'POST', { specialist: specialistId }),
+  removeFromFavorites: (favoriteId) => apiRequest(`catalog/favorites/${favoriteId}/`, 'DELETE'),
+  
+  // Методы для работы с услугами специалистов
+  getSpecialistServices: (specialistId) => apiRequest(`catalog/services/?specialist=${specialistId}`),
+  getServiceById: (id) => apiRequest(`catalog/services/${id}/`),
+  createService: (serviceData) => apiRequest('catalog/services/', 'POST', serviceData),
+  updateService: (id, serviceData) => apiRequest(`catalog/services/${id}/`, 'PATCH', serviceData),
+  deleteService: (id) => apiRequest(`catalog/services/${id}/`, 'DELETE'),
+  
+  // Метод для добавления изображения к услуге
+  addServiceImage: async (serviceId, file, is_main = false, alt_text = '') => {
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('is_main', is_main);
+    if (alt_text) formData.append('alt_text', alt_text);
+    
+    const url = `${API_URL}catalog/services/${serviceId}/add_image/`;
+    const token = localStorage.getItem('token');
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${token}`
+      },
+      body: formData
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw {
+        status: response.status,
+        message: errorData.detail || 'Произошла ошибка при загрузке изображения',
+        errors: errorData
+      };
+    }
+    
+    return await response.json();
+  }
+};
+
+// Экспортируем сервисы
+export { authService, catalogService };
