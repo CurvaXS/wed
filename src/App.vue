@@ -15,8 +15,9 @@ const displayName = computed(() => {
     return '';
 });
 
-// Состояние для отображения выпадающего меню
+// Состояние для отображения выпадающих меню
 const userMenuOpen = ref(false);
+const mobileMenuOpen = ref(false);
 
 // Функция для обновления имени пользователя
 function updateUsername() {
@@ -27,19 +28,49 @@ function updateUsername() {
     }
 }
 
-// Функция для переключения состояния меню
+// Функция для переключения состояния меню пользователя
 const toggleUserMenu = () => {
     userMenuOpen.value = !userMenuOpen.value;
 };
 
+// Функция переключения мобильного меню
+const toggleMobileMenu = () => {
+    mobileMenuOpen.value = !mobileMenuOpen.value;
+};
+
+// Функция для открытия модального окна входа из мобильного меню
+const handleMobileLogin = () => {
+    authStore.openLoginModal();
+    toggleMobileMenu(); // Закрываем мобильное меню после клика
+};
+
 // Функция для закрытия меню при клике вне его
-const closeUserMenu = (event) => {
+const closeMenus = (event) => {
+    // Закрытие пользовательского меню
     const userMenu = document.getElementById('user-menu');
     const userMenuButton = document.getElementById('user-menu-button');
     
+    // Закрытие мобильного меню
+    const mobileMenu = document.getElementById('mobile-menu');
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+
     if (userMenu && userMenuButton) {
         if (!userMenu.contains(event.target) && !userMenuButton.contains(event.target)) {
             userMenuOpen.value = false;
+        }
+    }
+
+    // Проверка для мобильного меню, но не закрывать при клике на кнопку бургера
+    if (mobileMenu && mobileMenuButton) {
+        if (!mobileMenu.contains(event.target) && !mobileMenuButton.contains(event.target)) {
+            mobileMenuOpen.value = false;
+        }
+    }
+    
+    if (mobileMenu && mobileMenuButton) {
+        if (!mobileMenu.contains(event.target) && !mobileMenuButton.contains(event.target)) {
+            // Раскомментируйте строку ниже, если хотите закрывать мобильное меню при клике вне
+            // mobileMenuOpen.value = false;
         }
     }
 };
@@ -65,7 +96,7 @@ async function handleLogin() {
 onMounted(async () => {
     updateUsername();
     // Добавляем обработчик клика вне меню
-    document.addEventListener('click', closeUserMenu);
+    document.addEventListener('click', closeMenus);
     
     // Загружаем данные пользователя при инициализации, если есть токен
     if (authStore.token && !authStore.user) {
@@ -76,7 +107,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
     // Удаляем обработчик при размонтировании компонента
-    document.removeEventListener('click', closeUserMenu);
+    document.removeEventListener('click', closeMenus);
 })
 
 </script>
@@ -87,8 +118,9 @@ onUnmounted(() => {
             <div class="flex justify-between items-center">
                 <div class="flex items-center">
                     <RouterLink to="/" class="text-2xl font-bold text-pink-500 flex items-center">
-                        <i class="fas fa-heart mr-2"></i>
-                        Название
+                        <!-- <i class="fas fa-heart mr-2"></i>
+                        Название -->
+                        <img src="@/assets/img/logo.png" alt="" style="max-width: 150px;">
                     </RouterLink>
                 </div>
                 
@@ -141,37 +173,37 @@ onUnmounted(() => {
                         </div>
                     </div>
                     
-                    <button id="mobile-menu-button" class="md:hidden text-gray-700">
+                    <button id="mobile-menu-button" @click="toggleMobileMenu" class="md:hidden text-gray-700">
                         <i class="fas fa-bars text-xl"></i>
                     </button>
                 </div>
             </div>
             
             <!-- Mobile menu -->
-            <div id="mobile-menu" class="hidden md:hidden mt-4 pb-4">
+            <div id="mobile-menu" :class="{'hidden': !mobileMenuOpen}" class="md:hidden mt-4 pb-4">
                 <div class="flex flex-col space-y-3">
-                    <RouterLink to="/" class="text-gray-700 hover:text-pink-500">Главная</RouterLink>
-                    <RouterLink v-if="!authStore.isSpecialist" to="/planner" class="text-gray-700 hover:text-pink-500">Планировщик</RouterLink>
-                    <RouterLink to="/catalog" class="text-gray-700 hover:text-pink-500">Каталог</RouterLink>
-                    <RouterLink to="/tenders" class="text-gray-700 hover:text-pink-500">Тендеры</RouterLink>
-                    <RouterLink to="/real-weddings" class="text-gray-700 hover:text-pink-500">Реальные свадьбы</RouterLink>
-                    <RouterLink to="/articles" class="text-gray-700 hover:text-pink-500">Статьи</RouterLink>
+                    <RouterLink to="/" class="text-gray-700 hover:text-pink-500" @click="toggleMobileMenu">Главная</RouterLink>
+                    <RouterLink v-if="!authStore.isSpecialist" to="/planner" class="text-gray-700 hover:text-pink-500" @click="toggleMobileMenu">Планировщик</RouterLink>
+                    <RouterLink to="/catalog" class="text-gray-700 hover:text-pink-500" @click="toggleMobileMenu">Каталог</RouterLink>
+                    <RouterLink to="/tenders" class="text-gray-700 hover:text-pink-500" @click="toggleMobileMenu">Тендеры</RouterLink>
+                    <!-- <RouterLink to="/real-weddings" class="text-gray-700 hover:text-pink-500" @click="toggleMobileMenu">Реальные свадьбы</RouterLink> -->
+                    <!-- <RouterLink to="/articles" class="text-gray-700 hover:text-pink-500" @click="toggleMobileMenu">Статьи</RouterLink> -->
                     <!-- Неавторизованный пользователь -->
                     <div v-if="!authStore.isLoggedIn" class="pt-2 border-t">
-                        <button @click="authStore.openLoginModal" class="text-gray-700 hover:text-pink-500 block mb-2 bg-transparent border-0 cursor-pointer text-left w-full">Войти</button>
-                        <RouterLink to="/register" class="text-pink-500 hover:text-pink-600 block">Регистрация</RouterLink>
+                        <button @click="handleMobileLogin" class="text-gray-700 hover:text-pink-500 block mb-2 bg-transparent border-0 cursor-pointer text-left w-full">Войти</button>
+                        <!-- <RouterLink to="/register" class="text-pink-500 hover:text-pink-600 block" @click="toggleMobileMenu">Регистрация</RouterLink> -->
                     </div>
                     
                     <!-- Авторизованный пользователь -->
                     <div v-else class="pt-2 border-t">
                         <div class="flex items-center mb-3">
                             <img :src="authStore.userAvatar" alt="Аватар" class="w-8 h-8 rounded-full mr-2 object-cover">
-                            <span class="font-medium">{{ username || 'Пользователь' }}</span>
+                            <span class="font-medium">{{ displayName || 'Пользователь' }}</span>
                         </div>
-                        <RouterLink to="/profile" class="text-gray-700 hover:text-pink-500 block mb-2">
+                        <RouterLink to="/profile" class="text-gray-700 hover:text-pink-500 block mb-2" @click="toggleMobileMenu">
                             <i class="fas fa-user mr-2"></i> Мой профиль
                         </RouterLink>
-                        <button @click="authStore.logout" class="text-gray-700 hover:text-pink-500 block mb-2 bg-transparent border-0 cursor-pointer text-left w-full">
+                        <button @click="authStore.logout; toggleMobileMenu();" class="text-gray-700 hover:text-pink-500 block mb-2 bg-transparent border-0 cursor-pointer text-left w-full">
                             <i class="fas fa-sign-out-alt mr-2"></i> Выход
                         </button>
                     </div>
@@ -187,74 +219,28 @@ onUnmounted(() => {
 
   
   <!-- Footer -->
-  <footer class="bg-gray-900 text-white pt-16 pb-8">
+  <footer class="bg-gray-900 text-white pt-12 pb-8">
         <div class="container mx-auto px-4">
-            <div class="grid md:grid-cols-4 gap-8 mb-12">
-                <!-- Column 1 -->
-                <div>
+            <div class="flex flex-col items-center justify-center">
+                <div class="mb-8">
                     <h3 class="text-xl font-bold mb-4 flex items-center">
                         <i class="fas fa-heart mr-2 text-pink-400"></i> СвадьбаГид
                     </h3>
-                    <p class="text-gray-400 mb-4">Помогаем парам организовать свадьбу мечты с 2020 года.</p>
-                    <div class="flex space-x-4">
-                        <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-vk text-xl"></i></a>
-                        <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-telegram text-xl"></i></a>
-                        <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-instagram text-xl"></i></a>
-                        <a href="#" class="text-gray-400 hover:text-white"><i class="fab fa-youtube text-xl"></i></a>
-                    </div>
                 </div>
                 
-                <!-- Column 2 -->
-                <div>
-                    <h4 class="font-bold text-lg mb-4">Для пар</h4>
-                    <ul class="space-y-2">
-                        <li><a href="#" class="text-gray-400 hover:text-white">Планировщик свадьбы</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white">Каталог профессионалов</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white">Тендеры</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white">Реальные свадьбы</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white">Статьи и советы</a></li>
-                    </ul>
-                </div>
-                
-                <!-- Column 3 -->
-                <div>
-                    <h4 class="font-bold text-lg mb-4">Для профессионалов</h4>
-                    <ul class="space-y-2">
-                        <li><a href="#" class="text-gray-400 hover:text-white">Зарегистрироваться</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white">Тарифы</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white">Как это работает</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white">Портфолио</a></li>
-                        <li><a href="#" class="text-gray-400 hover:text-white">Отзывы</a></li>
-                    </ul>
-                </div>
-                
-                <!-- Column 4 -->
-                <div>
-                    <h4 class="font-bold text-lg mb-4">Контакты</h4>
-                    <ul class="space-y-2">
-                        <li class="flex items-center">
-                            <i class="fas fa-map-marker-alt text-gray-400 mr-2"></i>
-                            <span class="text-gray-400">Москва, ул. Свадебная, 1</span>
-                        </li>
-                        <li class="flex items-center">
-                            <i class="fas fa-phone text-gray-400 mr-2"></i>
-                            <span class="text-gray-400">+7 (999) 123-45-67</span>
-                        </li>
-                        <li class="flex items-center">
-                            <i class="fas fa-envelope text-gray-400 mr-2"></i>
-                            <span class="text-gray-400">info@svadbagid.ru</span>
-                        </li>
-                    </ul>
-                </div>
+                <!-- Меню в подвале (идентичное шапке) -->
+                <nav class="flex flex-wrap justify-center space-x-4 space-y-2 md:space-y-0 mb-8">
+                    <RouterLink to="/" class="text-gray-400 hover:text-white">Главная</RouterLink>
+                    <RouterLink v-if="!authStore.isSpecialist" to="/planner" class="text-gray-400 hover:text-white">Планировщик</RouterLink>
+                    <RouterLink to="/catalog" class="text-gray-400 hover:text-white">Каталог</RouterLink>
+                    <RouterLink to="/tenders" class="text-gray-400 hover:text-white">Тендеры</RouterLink>
+                    <!-- <RouterLink to="/real-weddings" class="text-gray-400 hover:text-white">Реальные свадьбы</RouterLink> -->
+                    <!-- <RouterLink to="/articles" class="text-gray-400 hover:text-white">Статьи</RouterLink> -->
+                </nav>
             </div>
             
-            <div class="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-between items-center">
-                <p class="text-gray-500 text-sm mb-4 md:mb-0">© 2023 СвадьбаГид. Все права защищены.</p>
-                <div class="flex space-x-6">
-                    <a href="#" class="text-gray-500 hover:text-white text-sm">Политика конфиденциальности</a>
-                    <a href="#" class="text-gray-500 hover:text-white text-sm">Условия использования</a>
-                    <a href="#" class="text-gray-500 hover:text-white text-sm">Помощь</a>
-                </div>
+            <div class="pt-8 border-t border-gray-800 flex flex-col md:flex-row justify-center items-center">
+                <p class="text-gray-500 text-sm">© 2025 СвадьбаГид. Все права защищены.</p>
             </div>
         </div>
   </footer>
