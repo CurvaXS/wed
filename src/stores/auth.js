@@ -85,7 +85,9 @@ export const useAuthStore = defineStore('auth', {
       this.error = null;
       
       try {
+        console.log('Отправляем данные для регистрации:', userData);
         const response = await authService.register(userData);
+        console.log('Успешный ответ при регистрации:', response);
         
         // Автоматически входим после регистрации
         if (response.id || response.token) {
@@ -105,8 +107,35 @@ export const useAuthStore = defineStore('auth', {
         
         return { success: true };
       } catch (error) {
-        this.error = error.message || 'Ошибка при регистрации';
-        return { success: false, error: this.error };
+        console.error('Ошибка при регистрации пользователя:', error);
+        
+        // Формируем понятное сообщение об ошибке для пользователя
+        if (error.errors) {
+          console.error('Детали ошибки:', error.errors);
+          
+          // Проверяем конкретные типы ошибок и делаем их более человечными
+          if (error.errors.email && error.errors.email.length > 0) {
+            this.error = `Ошибка email: ${error.errors.email[0]}`;
+          } else if (error.errors.username && error.errors.username.length > 0) {
+            this.error = `Ошибка имени пользователя: ${error.errors.username[0]}`;
+          } else if (error.errors.password && error.errors.password.length > 0) {
+            this.error = `Ошибка пароля: ${error.errors.password[0]}`;
+          } else if (error.errors.user_type && error.errors.user_type.length > 0) {
+            this.error = `Ошибка типа пользователя: ${error.errors.user_type[0]}`;
+          } else {
+            // Если ошибка не соответствует известным полям, берем первое доступное сообщение
+            const firstErrorField = Object.keys(error.errors)[0];
+            if (firstErrorField) {
+              this.error = `Ошибка ${firstErrorField}: ${error.errors[firstErrorField][0]}`;
+            } else {
+              this.error = 'Ошибка при регистрации. Пожалуйста, проверьте введенные данные.';
+            }
+          }
+        } else {
+          this.error = error.message || 'Ошибка при регистрации. Пожалуйста, попробуйте снова позже.';
+        }
+        
+        return { success: false, error: this.error, details: error.errors };
       } finally {
         this.isLoading = false;
       }

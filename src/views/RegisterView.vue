@@ -11,6 +11,9 @@ const form = ref({
     username: '',
     firstName: '',
     lastName: '',
+    // Данные второго супруга для роли "пара"
+    partnerFirstName: '',
+    partnerLastName: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -36,6 +39,17 @@ const validateForm = () => {
     
     if (!form.value.lastName.trim()) {
         errors.value.lastName = 'Фамилия обязательна для заполнения';
+    }
+    
+    // Валидация полей второго супруга только для роли "пара"
+    if (form.value.role === 'couple') {
+        if (!form.value.partnerFirstName.trim()) {
+            errors.value.partnerFirstName = 'Имя второго супруга обязательно для заполнения';
+        }
+        
+        if (!form.value.partnerLastName.trim()) {
+            errors.value.partnerLastName = 'Фамилия второго супруга обязательна для заполнения';
+        }
     }
     
     if (!form.value.email.trim()) {
@@ -71,10 +85,13 @@ const handleSubmit = async () => {
             username: form.value.username, // Используем введенное имя пользователя
             email: form.value.email,
             password: form.value.password,
-            password_confirm: form.value.password, // Добавляем поле password_confirm, которое ожидает бэкенд
+            password_confirm: form.value.confirmPassword, // Используем значение из confirmPassword
             first_name: form.value.firstName,
             last_name: form.value.lastName,
-            user_type: form.value.role // Тип пользователя: couple или specialist
+            user_type: form.value.role, // Тип пользователя: couple или specialist
+            // Добавляем данные второго супруга для роли "пара"
+            partner_first_name: form.value.role === 'couple' ? form.value.partnerFirstName : '',
+            partner_last_name: form.value.role === 'couple' ? form.value.partnerLastName : ''
         };
         
         // Вызываем метод регистрации из хранилища auth
@@ -85,7 +102,13 @@ const handleSubmit = async () => {
             
             // После успешной регистрации и авторизации перенаправляем на страницу профиля
             // Сохраняем имя пользователя в localStorage для отображения в шапке
-            localStorage.setItem('username', `${form.value.firstName} ${form.value.lastName}`);
+            if (form.value.role === 'couple') {
+                // Для пары сохраняем имена обоих супругов
+                localStorage.setItem('username', `${form.value.firstName} и ${form.value.partnerFirstName}`);
+            } else {
+                // Для специалиста сохраняем только его имя
+                localStorage.setItem('username', `${form.value.firstName} ${form.value.lastName}`);
+            }
             
             // Перенаправляем на страницу профиля
             router.push('/profile');
@@ -97,6 +120,7 @@ const handleSubmit = async () => {
         
         // Обрабатываем детальные ошибки API
         if (error.errors) {
+            console.log('Обработка ошибок регистрации:', error.errors);
             // Обработка пользовательских ошибок при регистрации
             if (error.errors.username && error.errors.username.length > 0) {
                 errors.value.username = error.errors.username[0];
@@ -104,10 +128,22 @@ const handleSubmit = async () => {
             
             if (error.errors.email && error.errors.email.length > 0) {
                 errors.value.email = error.errors.email[0];
+                // Прокручиваем к полю email, чтобы пользователь увидел ошибку
+                setTimeout(() => {
+                    document.getElementById('email')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
             }
             
             if (error.errors.password && error.errors.password.length > 0) {
                 errors.value.password = error.errors.password[0];
+            }
+            
+            if (error.errors.password_confirm && error.errors.password_confirm.length > 0) {
+                errors.value.confirmPassword = error.errors.password_confirm[0];
+            }
+            
+            if (error.errors.user_type && error.errors.user_type.length > 0) {
+                serverError.value = `Ошибка в типе пользователя: ${error.errors.user_type[0]}`;
             }
             
             // Если нет ошибок для конкретных полей, показываем общую ошибку
@@ -185,7 +221,7 @@ const handleSubmit = async () => {
                                     type="button"
                                     @click="form.role = 'specialist'"
                                     class="flex-1 py-3 px-4 text-center transition"
-                                    :class="form.role === 'vendor' ? 'bg-pink-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                                    :class="form.role === 'specialist' ? 'bg-pink-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
                                 >
                                     <i class="fas fa-store mr-2"></i> Я подрядчик
                                 </button>
@@ -205,28 +241,60 @@ const handleSubmit = async () => {
                             </div>
 
                             <!-- Имя и фамилия -->
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label for="firstName" class="block text-sm font-medium text-gray-700 mb-1">Имя</label>
-                                    <input 
-                                        type="text" 
-                                        id="firstName" 
-                                        v-model="form.firstName"
-                                        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-pink-500 outline-none transition"
-                                        :class="errors.firstName ? 'border-red-500' : 'border-gray-300'"
-                                    >
-                                    <p v-if="errors.firstName" class="mt-1 text-sm text-red-500">{{ errors.firstName }}</p>
+                            <div>
+                                <h3 v-if="form.role === 'couple'" class="text-md font-medium text-gray-700 mb-2">Данные первого супруга</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                    <div>
+                                        <label for="firstName" class="block text-sm font-medium text-gray-700 mb-1">Имя</label>
+                                        <input 
+                                            type="text" 
+                                            id="firstName" 
+                                            v-model="form.firstName"
+                                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-pink-500 outline-none transition"
+                                            :class="errors.firstName ? 'border-red-500' : 'border-gray-300'"
+                                        >
+                                        <p v-if="errors.firstName" class="mt-1 text-sm text-red-500">{{ errors.firstName }}</p>
+                                    </div>
+                                    <div>
+                                        <label for="lastName" class="block text-sm font-medium text-gray-700 mb-1">Фамилия</label>
+                                        <input 
+                                            type="text" 
+                                            id="lastName" 
+                                            v-model="form.lastName"
+                                            class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-pink-500 outline-none transition"
+                                            :class="errors.lastName ? 'border-red-500' : 'border-gray-300'"
+                                        >
+                                        <p v-if="errors.lastName" class="mt-1 text-sm text-red-500">{{ errors.lastName }}</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <label for="lastName" class="block text-sm font-medium text-gray-700 mb-1">Фамилия</label>
-                                    <input 
-                                        type="text" 
-                                        id="lastName" 
-                                        v-model="form.lastName"
-                                        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-pink-500 outline-none transition"
-                                        :class="errors.lastName ? 'border-red-500' : 'border-gray-300'"
-                                    >
-                                    <p v-if="errors.lastName" class="mt-1 text-sm text-red-500">{{ errors.lastName }}</p>
+                                
+                                <!-- Данные второго супруга (только для роли "пара") -->
+                                <div v-if="form.role === 'couple'" class="mt-4">
+                                    <h3 class="text-md font-medium text-gray-700 mb-2">Данные второго супруга</h3>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label for="partnerFirstName" class="block text-sm font-medium text-gray-700 mb-1">Имя</label>
+                                            <input 
+                                                type="text" 
+                                                id="partnerFirstName" 
+                                                v-model="form.partnerFirstName"
+                                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-pink-500 outline-none transition"
+                                                :class="errors.partnerFirstName ? 'border-red-500' : 'border-gray-300'"
+                                            >
+                                            <p v-if="errors.partnerFirstName" class="mt-1 text-sm text-red-500">{{ errors.partnerFirstName }}</p>
+                                        </div>
+                                        <div>
+                                            <label for="partnerLastName" class="block text-sm font-medium text-gray-700 mb-1">Фамилия</label>
+                                            <input 
+                                                type="text" 
+                                                id="partnerLastName" 
+                                                v-model="form.partnerLastName"
+                                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-pink-300 focus:border-pink-500 outline-none transition"
+                                                :class="errors.partnerLastName ? 'border-red-500' : 'border-gray-300'"
+                                            >
+                                            <p v-if="errors.partnerLastName" class="mt-1 text-sm text-red-500">{{ errors.partnerLastName }}</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             

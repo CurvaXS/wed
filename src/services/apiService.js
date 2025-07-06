@@ -1,8 +1,8 @@
 // apiService.js - Сервис для работы с API
 
 // Базовый URL API
-// const API_URL = 'http://127.0.0.1:8000/api/v1/';  
-const API_URL = 'https://makarsoda.pythonanywhere.com/api/v1/';
+const API_URL = 'http://127.0.0.1:8000/api/v1/';  
+// const API_URL = 'https://makarsoda.pythonanywhere.com/api/v1/';
 // const API_URL = 'http://mmpysh9z.beget.tech/api/v1/';
 
 
@@ -50,6 +50,12 @@ const apiRequest = async (endpoint, method = 'GET', data = null, isFormData = fa
       options.body = JSON.stringify(data);
     }
   }
+  
+  // Логируем детали запроса для регистрации
+  if (endpoint.includes('register') && method === 'POST') {
+    console.log(`Отправляем регистрационные данные на ${url}:`, data);
+    console.log('Заголовки:', options.headers);
+  }
 
   try {
     const response = await fetch(url, options);
@@ -58,6 +64,7 @@ const apiRequest = async (endpoint, method = 'GET', data = null, isFormData = fa
     if (!response.ok) {
       // Если есть ошибка, пытаемся получить сообщение из ответа
       const errorData = await response.json().catch(() => ({}));
+      console.error(`Ошибка ${response.status} при запросе к ${url}:`, errorData);
       throw {
         status: response.status,
         message: errorData.detail || 'Произошла ошибка при запросе к API',
@@ -1040,6 +1047,37 @@ const profileService = {
   deletePostComment: (id) => apiRequest(`users/comments/${id}/`, 'DELETE'),
 };
 
+// Сервис для работы с профилями пользователей
+const profileService = {
+  // Получение данных профиля пользователя
+  getUserProfile: () => apiRequest('users/me/'),
+  
+  // Обновление данных профиля пары
+  updateCoupleProfile: (profileData) => apiRequest('users/couple-profile/', 'PATCH', profileData),
+  
+  // Добавление/обновление деталей свадьбы
+  updateWeddingDetails: (detailsData) => apiRequest('users/wedding-details/', 'PATCH', detailsData),
+  
+  // Загрузка аватара пользователя
+  uploadAvatar: async (file) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    return apiRequest('users/me/', 'PATCH', formData, true); // true указывает на FormData
+  },
+  
+  // Получение списка членов команды
+  getTeamMembers: (coupleId) => apiRequest(`users/teams/${coupleId || ''}`),
+  
+  // Добавление члена команды
+  addTeamMember: (memberData) => apiRequest('users/teams/', 'POST', memberData),
+  
+  // Удаление члена команды
+  removeTeamMember: (memberId) => apiRequest(`users/teams/${memberId}/`, 'DELETE'),
+  
+  // Обновление данных члена команды
+  updateTeamMember: (memberId, memberData) => apiRequest(`users/teams/${memberId}/`, 'PATCH', memberData),
+};
+
 // Экспортируем все сервисы
 export {
   authService,
@@ -1058,5 +1096,6 @@ export default {
   weddingsService,
   tendersService,
   contentService,
-  plannerService
+  plannerService,
+  profileService
 };

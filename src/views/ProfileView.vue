@@ -603,6 +603,8 @@ const loadProfile = async () => {
                 avatar: user.avatar,
                 brideName: coupleData.bride_name || '',
                 groomName: coupleData.groom_name || '',
+                partnerFirstName: coupleData.partner_first_name || '',
+                partnerLastName: coupleData.partner_last_name || '',
                 aboutUs: coupleData.about_us || ''
             };
             
@@ -737,7 +739,12 @@ if (posts.value.length === 0) {
                 
                 <!-- Couple Info -->
                 <div class="flex-1">
-                    <h1 class="text-3xl font-bold mb-2">{{ coupleProfile.brideName }} и {{ coupleProfile.groomName }}</h1>
+                    <h1 class="text-3xl font-bold mb-2">
+                        {{ coupleProfile.brideName }} и {{ coupleProfile.groomName }}
+                        <span v-if="coupleProfile.partnerFirstName">
+                            + {{ coupleProfile.partnerFirstName }} {{ coupleProfile.partnerLastName }}
+                        </span>
+                    </h1>
                     <p class="text-lg opacity-80">Свадьба {{ new Date(weddingDetails.date).toLocaleDateString('ru-RU') }}</p>
                 </div>
 
