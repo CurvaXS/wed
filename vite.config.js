@@ -12,6 +12,11 @@ export default defineConfig({
     vueDevTools(),
     tailwindcss(),
   ],
+  server: {
+    hmr: {
+      overlay: false // Отключаем наложение ошибок, чтобы инструменты разработки не блокировали работу
+    }
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))

@@ -42,16 +42,20 @@
                 Установить дату свадьбы
               </button>
               <div v-else class="flex items-center space-x-3">
-                <span class="text-gray-700">Дата свадьбы: <span class="font-semibold">{{ formatDate(weddingDate) }}</span></span>
-                <button @click="showDatePicker = true" class="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-indigo-600 transition-colors duration-300">
+                <span class="text-gray-700">
+                  Дата свадьбы:
+                  <span class="font-semibold">{{ formatDate(weddingDate) }}</span>
+                   
+                </span>
+                <!-- <button @click="showDatePicker = true" class="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-indigo-600 transition-colors duration-300">
                   <i class="fas fa-edit"></i>
-                </button>
+                </button> -->
               </div>
             </div>
           </div>
           
           <!-- Таймер до свадьбы -->
-          <div v-if="weddingDate" class="bg-white shadow-sm wedding-timer-bg rounded-xl p-6 mb-8">
+          <!-- <div v-if="weddingDate" class="bg-white shadow-sm wedding-timer-bg rounded-xl p-6 mb-8">
             <h3 class="text-xl font-semibold mb-4 text-center">До свадьбы осталось</h3>
             <div class="flex flex-wrap justify-center gap-4">
               <div class="bg-white bg-opacity-20 shadow-sm rounded-lg px-6 py-4 text-center min-w-24">
@@ -67,7 +71,7 @@
                 <span class="text-sm opacity-80">минут</span>
               </div>
             </div>
-          </div>
+          </div> -->
           
           <!-- Карточки с информацией -->
           <div class="dashboard-grid mb-8">
@@ -1985,9 +1989,15 @@ const getPriorityClass = (priority) => {
 onMounted(() => {
   console.log('Компонент PlannerView смонтирован');
   
-  // Инициализация данных
+  // Инициализация данных при монтировании компонента
   const initData = async () => {
     try {
+      console.log('Начало инициализации данных планировщика...');
+      
+      // Загружаем детали свадьбы через API (самый важный шаг)
+      await loadWeddingDetails();
+      console.log('Дата свадьбы после загрузки:', weddingDate.value, 'Таймер:', weddingCountdown.value);
+      
       // Загружаем категории задач с сервера
       await loadTaskCategories();
       
@@ -1998,18 +2008,40 @@ onMounted(() => {
       loadBudgetItems();
       loadGuests();
       loadScheduleItems();
+      
+      console.log('Инициализация завершена успешно');
     } catch (error) {
       console.error('Ошибка при инициализации данных:', error);
     }
   };
   
-  // Загрузка даты свадьбы из localStorage
-  const savedWeddingDate = localStorage.getItem('weddingDate');
-  if (savedWeddingDate) {
-    weddingDate.value = savedWeddingDate;
-  }
+  // Загрузка даты свадьбы из профиля пользователя
+  const loadWeddingDate = async () => {
+    try {
+      // Получаем данные из профиля пользователя
+      const userData = userStore.user;
+      console.log('Данные пользователя для даты свадьбы:', userData);
+      
+      // Проверяем наличие даты свадьбы в профиле
+      if (userData && userData.couple_profile && userData.couple_profile.wedding_details && userData.couple_profile.wedding_details.wedding_date) {
+        weddingDate.value = userData.couple_profile.wedding_details.wedding_date;
+        console.log('Загружена дата свадьбы из профиля:', weddingDate.value);
+      } else {
+        console.log('Дата свадьбы в профиле не найдена');
+        
+        // Если даты в профиле нет, пробуем взять из localStorage
+        const savedWeddingDate = localStorage.getItem('weddingDate');
+        if (savedWeddingDate) {
+          weddingDate.value = savedWeddingDate;
+          console.log('Загружена дата свадьбы из localStorage:', weddingDate.value);
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке даты свадьбы:', error);
+    }
+  };
   
-  // Загрузка общего бюджета
+    // Загрузка общего бюджета
   const savedTotalBudget = localStorage.getItem('totalBudget');
   if (savedTotalBudget) {
     totalBudget.value = Number(savedTotalBudget);
@@ -2029,12 +2061,23 @@ const getStatusClass = (status) => {
 };
 
 // Методы для свадебной даты
-const setWeddingDate = () => {
+const setWeddingDate = async () => {
   weddingDate.value = newWeddingDate.value;
   showDatePicker.value = false;
   
-  // Сохранение в localStorage
+  // Сохранение в localStorage и на сервере
   localStorage.setItem('weddingDate', weddingDate.value);
+  
+  // Отправляем дату на сервер для сохранения в профиле
+  try {
+    await plannerService.updateWeddingDetails({ wedding_date: weddingDate.value });
+    console.log('Дата свадьбы успешно сохранена на сервере:', weddingDate.value);
+    
+    // Обновляем данные пользователя в сторе, чтобы отобразить изменения без перезагрузки
+    await userStore.fetchUser();
+  } catch (error) {
+    console.error('Ошибка при сохранении даты свадьбы на сервере:', error);
+  }
 };
 
 // Методы для задач
@@ -2747,7 +2790,132 @@ const updateGuestStatus = async (guest, status) => {
   }
 };
 
+
+
 // ----- Методы для работы с датой свадьбы -----
+// Состояние даты свадьбы, синхронизированной с профилем пары
+// const weddingDate = ref('');
+const weddingDisplayDate = ref('');
+const weddingTime = ref('');
+const weddingVenue = ref('');
+
+// Загрузка деталей свадьбы из профиля пользователя
+const loadWeddingDetails = async () => {
+  try {
+    // Получаем детали свадьбы через plannerService
+    // Метод getWeddingDetails теперь возвращает только wedding_details из профиля
+    const weddingDetails = await plannerService.getWeddingDetails();
+    console.log('Получены детали свадьбы из API:', weddingDetails);
+    
+    // Проверяем, что детали свадьбы не пустые и есть дата
+    if (weddingDetails && weddingDetails.wedding_date) {
+      // Сохраняем дату в исходном формате для вычислений
+      weddingDate.value = weddingDetails.wedding_date;
+      console.log('Установлена дата свадьбы из API:', weddingDate.value);
+      
+      // Форматируем дату для отображения
+      try {
+        const dateObj = new Date(weddingDate.value);
+        if (!isNaN(dateObj.getTime())) {
+          weddingDisplayDate.value = dateObj.toLocaleDateString('ru-RU');
+          console.log('Дата свадьбы для отображения:', weddingDisplayDate.value);
+        } else {
+          console.warn('Неверный формат даты:', weddingDate.value);
+        }
+      } catch (e) {
+        console.warn('Ошибка при форматировании даты свадьбы:', e);
+      }
+      
+      // Сохраняем другие детали свадьбы
+      if (weddingDetails.wedding_time) {
+        weddingTime.value = weddingDetails.wedding_time;
+      }
+      if (weddingDetails.wedding_venue) {
+        weddingVenue.value = weddingDetails.wedding_venue;
+      }
+      
+      // Сохраняем в localStorage для быстрого доступа и оффлайн-режима
+      localStorage.setItem('weddingDate', weddingDate.value);
+    } else {
+      console.warn('Дата свадьбы не найдена в ответе API, проверяем localStorage');
+      
+      // Пробуем восстановить из localStorage
+      const savedWeddingDate = localStorage.getItem('weddingDate');
+      if (savedWeddingDate) {
+        weddingDate.value = savedWeddingDate;
+        console.log('Восстановлена дата свадьбы из localStorage:', weddingDate.value);
+        
+        // Форматируем дату для отображения
+        try {
+          const dateObj = new Date(weddingDate.value);
+          if (!isNaN(dateObj.getTime())) {
+            weddingDisplayDate.value = dateObj.toLocaleDateString('ru-RU');
+          }
+        } catch (e) {
+          console.warn('Ошибка при форматировании даты из localStorage:', e);
+        }
+      } else {
+        console.warn('Детали свадьбы не найдены ни в API, ни в localStorage');
+      }
+    }
+    
+    // Проверим таймер
+    console.log('Таймер обратного отсчёта:', weddingCountdown.value);
+  } catch (error) {
+    console.error('Ошибка при загрузке деталей свадьбы:', error);
+    // В случае ошибки пытаемся загрузить данные из localStorage
+    const savedWeddingDate = localStorage.getItem('weddingDate');
+    if (savedWeddingDate) {
+      weddingDate.value = savedWeddingDate;
+      console.log('Загружена дата свадьбы из localStorage после ошибки API:', weddingDate.value);
+    }
+  }
+};
+
+// Сохранение деталей свадьбы в профиль пользователя
+const saveWeddingDetails = async () => {
+  try {
+    console.log('Сохранение даты свадьбы:', weddingDate.value);
+    
+    // Формируем объект с деталями свадьбы для отправки на сервер
+    const weddingDetails = {
+      date: weddingDate.value,
+      time: weddingTime.value,
+      venue: weddingVenue.value
+    };
+    
+    // Вызываем API для обновления деталей свадьбы
+    await profileService.updateWeddingDetails(weddingDetails);
+    
+    console.log('Детали свадьбы успешно сохранены');
+    
+    // Обновляем форматированную дату для отображения
+    if (weddingDate.value) {
+      try {
+        const date = new Date(weddingDate.value);
+        if (!isNaN(date.getTime())) {
+          weddingDisplayDate.value = date.toLocaleDateString('ru-RU');
+        }
+      } catch (e) {
+        console.warn('Ошибка при форматировании даты свадьбы после сохранения:', e);
+      }
+    }
+    
+    // Можно добавить уведомление для пользователя о успешном сохранении
+    // toastMessage('Дата свадьбы успешно сохранена');
+    
+    return true;
+  } catch (error) {
+    console.error('Ошибка при сохранении деталей свадьбы:', error);
+    
+    // Можно добавить уведомление для пользователя об ошибке
+    // toastError('Ошибка при сохранении даты свадьбы');
+    
+    return false;
+  }
+};
+
+
 
 
 // ----- Жизненный цикл компонента -----
@@ -2759,6 +2927,9 @@ onMounted(async () => {
   
   // Загружаем данные планировщика
   try {
+    // Загружаем детали свадьбы из профиля пользователя
+    await loadWeddingDetails();
+    
     // Загружаем задачи
     await loadTasks();
     

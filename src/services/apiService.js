@@ -1,8 +1,8 @@
 // apiService.js - Сервис для работы с API
 
 // Базовый URL API
-const API_URL = 'http://127.0.0.1:8000/api/v1/';  
-// const API_URL = 'https://makarsoda.pythonanywhere.com/api/v1/';
+// const API_URL = 'http://127.0.0.1:8000/api/v1/';  
+const API_URL = 'https://makarsoda.pythonanywhere.com/api/v1/';
 // const API_URL = 'http://mmpysh9z.beget.tech/api/v1/';
 
 
@@ -688,6 +688,22 @@ const plannerService = {
   updateBudgetItem: (id, itemData) => apiRequest(`planner/budget/${id}/`, 'PATCH', itemData),
   deleteBudgetItem: (id) => apiRequest(`planner/budget/${id}/`, 'DELETE'),
   
+  // Дата свадьбы и детали - используем эндпоинт обновления профиля
+  updateWeddingDetails: (weddingData) => apiRequest('users/couple-profile/', 'PATCH', { wedding_details: weddingData }),
+  // Для получения деталей свадьбы используем текущий профиль пользователя
+  getWeddingDetails: async () => {
+    try {
+      const userProfile = await apiRequest('users/me/');
+      if (userProfile && userProfile.couple_profile && userProfile.couple_profile.wedding_details) {
+        return userProfile.couple_profile.wedding_details;
+      }
+      return {};
+    } catch (error) {
+      console.error('Ошибка при получении деталей свадьбы:', error);
+      return {};
+    }
+  },
+  
   // Группы гостей
   getGuestGroups: () => apiRequest('planner/guest-groups/'),
   createGuestGroup: (groupData) => apiRequest('planner/guest-groups/', 'POST', groupData),
@@ -791,8 +807,10 @@ const profileService = {
     const url = `${API_URL}users/profile/update-wedding-details/`;
     const token = localStorage.getItem('token');
     
+    console.log('Отправка данных свадьбы через POST:', JSON.stringify(weddingData));
+    
     const response = await fetch(url, {
-      method: 'PATCH',
+      method: 'POST', 
       headers: {
         'Authorization': `Token ${token}`
       },
@@ -808,7 +826,9 @@ const profileService = {
       };
     }
     
-    return await response.json();
+    const responseData = await response.json();
+    console.log('Ответ API при сохранении деталей свадьбы:', responseData);
+    return responseData;
   },
   
   // Загрузка аватара с помощью FormData
@@ -1045,37 +1065,6 @@ const profileService = {
   addPostComment: (postId, commentData) => apiRequest(`users/posts/${postId}/comments/`, 'POST', commentData),
   updatePostComment: (id, commentData) => apiRequest(`users/comments/${id}/`, 'PATCH', commentData),
   deletePostComment: (id) => apiRequest(`users/comments/${id}/`, 'DELETE'),
-};
-
-// Сервис для работы с профилями пользователей
-const profileService = {
-  // Получение данных профиля пользователя
-  getUserProfile: () => apiRequest('users/me/'),
-  
-  // Обновление данных профиля пары
-  updateCoupleProfile: (profileData) => apiRequest('users/couple-profile/', 'PATCH', profileData),
-  
-  // Добавление/обновление деталей свадьбы
-  updateWeddingDetails: (detailsData) => apiRequest('users/wedding-details/', 'PATCH', detailsData),
-  
-  // Загрузка аватара пользователя
-  uploadAvatar: async (file) => {
-    const formData = new FormData();
-    formData.append('avatar', file);
-    return apiRequest('users/me/', 'PATCH', formData, true); // true указывает на FormData
-  },
-  
-  // Получение списка членов команды
-  getTeamMembers: (coupleId) => apiRequest(`users/teams/${coupleId || ''}`),
-  
-  // Добавление члена команды
-  addTeamMember: (memberData) => apiRequest('users/teams/', 'POST', memberData),
-  
-  // Удаление члена команды
-  removeTeamMember: (memberId) => apiRequest(`users/teams/${memberId}/`, 'DELETE'),
-  
-  // Обновление данных члена команды
-  updateTeamMember: (memberId, memberData) => apiRequest(`users/teams/${memberId}/`, 'PATCH', memberData),
 };
 
 // Экспортируем все сервисы

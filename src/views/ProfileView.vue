@@ -9,6 +9,26 @@ const isLoading = ref(false);
 const errorMessage = ref('');
 const successMessage = ref('');
 const API_URL = ref('http://127.0.0.1:8000/api/v1/')
+const dateNotificationVisible = ref(false);
+const isEditingWeddingDetails = ref(false); // Флаг для модального окна редактирования деталей свадьбы
+
+// Вычисляемое свойство для расчета дней до свадьбы
+const daysUntilWedding = computed(() => {
+    if (!weddingDetails.value.date) return null;
+    
+    const weddingDate = new Date(weddingDetails.value.date);
+    const today = new Date();
+    
+    // Сбрасываем часы, минуты, секунды для корректного сравнения только дат
+    weddingDate.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
+    
+    // Вычисляем разницу в миллисекундах и переводим в дни
+    const diffTime = weddingDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    return diffDays > 0 ? diffDays : null; // Возвращаем null, если дата в прошлом
+});
 
 // Состояние профиля пары
 const coupleProfile = ref({
@@ -203,6 +223,7 @@ const saveProfileInfo = async () => {
 const openEditWeddingDetails = () => {
     editedWeddingDetails.value = {...weddingDetails.value};
     showEditWeddingDetailsModal.value = true;
+    dateNotificationVisible.value = false; // Закрываем уведомление, если оно отображается
 };
 
 const saveWeddingDetails = async () => {
@@ -210,23 +231,62 @@ const saveWeddingDetails = async () => {
         isLoading.value = true;
         errorMessage.value = '';
         
+        // Получаем текущую дату для отладки
+        console.log('Отправляемая дата (исходная):', editedWeddingDetails.value.date);
+        console.log('Детали для отправки:', JSON.stringify(editedWeddingDetails.value));
+        
+        // Обеспечиваем, что дата отправляется в формате ISO String
+        let dateToSend = editedWeddingDetails.value.date;
+        
+        // Проверяем, не является ли дата строкой в формате dd.mm.yyyy
+        if (dateToSend && dateToSend.includes('.')) {
+            const parts = dateToSend.split('.');
+            if (parts.length === 3) {
+                const newDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                if (!isNaN(newDate.getTime())) {
+                    dateToSend = newDate.toISOString().split('T')[0]; // YYYY-MM-DD
+                    console.log('Дата преобразована в ISO:', dateToSend);
+                }
+            }
+        }
+        
         const response = await profileService.updateWeddingDetails({
-            date: editedWeddingDetails.value.date,
+            date: dateToSend, // Отправляем ISO дату
             time: editedWeddingDetails.value.time,
             venue: editedWeddingDetails.value.venue,
             address: editedWeddingDetails.value.address,
             dress_code: editedWeddingDetails.value.dressCode
         });
         
+        console.log('Ответ сервера:', response);
+        
+        // Сохраняем ISO формат даты для API
+        const responseDate = response.date;
+        let displayDate = '';
+        
+        try {
+            if (responseDate) {
+                const date = new Date(responseDate);
+                if (!isNaN(date.getTime())) {
+                    displayDate = date.toLocaleDateString('ru-RU');
+                }
+            }
+        } catch (e) {
+            console.warn('Ошибка при обработке даты из ответа:', e);
+        }
+        
         // Обновляем локальное состояние после успешного запроса
         weddingDetails.value = {
             ...weddingDetails.value,
-            date: response.date,
+            date: responseDate, // Сохраняем ISO формат
+            displayDate: displayDate, // Для отображения
             time: response.time,
             venue: response.venue,
             address: response.address,
             dressCode: response.dress_code
         };
+        
+        console.log('Обновлено состояние weddingDetails:', weddingDetails.value);
         
         successMessage.value = 'Детали свадьбы успешно обновлены';
         showEditWeddingDetailsModal.value = false;
@@ -601,8 +661,10 @@ const loadProfile = async () => {
             coupleProfile.value = {
                 id: coupleData.id, // Сохраняем ID профиля пары для использования в запросах
                 avatar: user.avatar,
-                brideName: coupleData.bride_name || '',
-                groomName: coupleData.groom_name || '',
+                // Используем имя и фамилию пользователя в качестве основного имени
+                brideName: user.first_name || '',
+                groomName: user.last_name || '',
+                // Добавляем имя и фамилию партнера из профиля пары
                 partnerFirstName: coupleData.partner_first_name || '',
                 partnerLastName: coupleData.partner_last_name || '',
                 aboutUs: coupleData.about_us || ''
@@ -628,23 +690,26 @@ const loadProfile = async () => {
             if (coupleData.wedding_details) {
                 const details = coupleData.wedding_details;
                 
-                // Безопасная обработка даты и времени
-                let formattedDate = '';
-                let formattedTime = '';
+                // Сохраняем исходную дату в ISO формате для корректной работы с формами и API
+                // но также создаем отформатированную версию для отображения
+                const rawDate = details.date || '';
+                let displayDate = '';
                 
                 try {
-                    if (details.date) {
-                        const date = new Date(details.date);
+                    if (rawDate) {
+                        const date = new Date(rawDate);
                         if (!isNaN(date.getTime())) {
-                            formattedDate = date.toLocaleDateString('ru-RU');
+                            displayDate = date.toLocaleDateString('ru-RU');
                         }
                     }
                 } catch (e) {
                     console.warn('Ошибка при обработке даты свадебных деталей:', e);
                 }
                 
+                // Сохраняем оригинальную дату в ISO формате, а не локализованную строку
                 weddingDetails.value = {
-                    date: formattedDate,
+                    date: rawDate, // Сохраняем ISO формат для API
+                    displayDate: displayDate, // Для отображения в UI
                     time: details.time || '',
                     venue: details.venue || '',
                     address: details.address || '',
@@ -654,6 +719,15 @@ const loadProfile = async () => {
             
             console.log('Обработанный профиль пары:', coupleProfile.value);
             console.log('Обработанные детали свадьбы:', weddingDetails.value);
+            
+            // Показать уведомление, если дата свадьбы не указана
+            if (!weddingDetails.value.date) {
+                dateNotificationVisible.value = true;
+                // Автоматически скрыть уведомление через 10 секунд
+                setTimeout(() => {
+                    dateNotificationVisible.value = false;
+                }, 10000);
+            }
         }
         
         // Загружаем команду и посты
@@ -740,29 +814,33 @@ if (posts.value.length === 0) {
                 <!-- Couple Info -->
                 <div class="flex-1">
                     <h1 class="text-3xl font-bold mb-2">
-                        {{ coupleProfile.brideName }} и {{ coupleProfile.groomName }}
+                        {{ coupleProfile.brideName }}  {{ coupleProfile.groomName }}
                         <span v-if="coupleProfile.partnerFirstName">
-                            + {{ coupleProfile.partnerFirstName }} {{ coupleProfile.partnerLastName }}
+                            и {{ coupleProfile.partnerFirstName }} {{ coupleProfile.partnerLastName }}
                         </span>
                     </h1>
-                    <p class="text-lg opacity-80">Свадьба {{ new Date(weddingDetails.date).toLocaleDateString('ru-RU') }}</p>
+                    <p class="text-lg opacity-80">
+                        <span v-if="weddingDetails.date">Свадьба {{ weddingDetails.displayDate }}</span>
+                        <span v-else class="text-pink-400">Дата свадьбы не указана</span>
+                    </p>
                 </div>
 
                 <!-- Stats -->
                 <div class="md:ml-auto bg-white bg-opacity-20 rounded-xl p-6">
-                    <div class="grid grid-cols-3 gap-4 text-center text-black">
+                    <div class="grid grid-cols-1 gap-4 text-center text-black">
                         <div>
-                            <div class="text-2xl font-bold">127</div>
+                            <div v-if="daysUntilWedding" class="text-2xl font-bold">{{ daysUntilWedding }}</div>
+                            <div v-else class="text-2xl font-bold text-pink-400">—</div>
                             <div class="text-sm">дней до свадьбы</div>
                         </div>
-                        <div>
+                        <!-- <div>
                             <div class="text-2xl font-bold">42%</div>
                             <div class="text-sm">готовности</div>
-                        </div>
+                        </div> 
                         <div>
                             <div class="text-2xl font-bold">85</div>
                             <div class="text-sm">гостей</div>
-                        </div>
+                        </div> -->
                     </div>
                 </div>
             </div>
@@ -844,8 +922,9 @@ if (posts.value.length === 0) {
                         
                         <div class="space-y-4">
                             <div>
-                                <h3 class="font-medium text-gray-500 mb-1">Дата и время</h3>
-                                <p>{{ new Date(weddingDetails.date).toLocaleDateString('ru-RU') }} в {{ weddingDetails.time }}</p>
+                                <h3 class="font-medium text-gray-500 mb-1">Дата</h3>
+                                <span v-if="weddingDetails.date">Свадьба {{ new Date(weddingDetails.date).toLocaleDateString('ru-RU') }}</span>
+                                <span v-else class="text-pink-400">Дата свадьбы не указана</span>
                             </div>
                             <div>
                                 <h3 class="font-medium text-gray-500 mb-1">Место проведения</h3>
@@ -1181,6 +1260,40 @@ if (posts.value.length === 0) {
         </div>
     </div>
 </template>
+
+<!-- Всплывающее уведомление о дате свадьбы -->
+<!-- <Teleport to="body">
+    <div v-if="dateNotificationVisible" 
+         class="fixed bottom-8 right-8 max-w-md bg-white rounded-lg shadow-lg border-l-4 border-pink-500 p-4 z-50 animate-fade-in-up">
+        <div class="flex items-start">
+            <div class="flex-shrink-0 text-pink-500">
+                <i class="fas fa-info-circle text-xl"></i>
+            </div>
+            <div class="ml-3 flex-1">
+                <h3 class="text-sm font-medium text-gray-800">Дата свадьбы не указана</h3>
+                <div class="mt-2 text-sm text-gray-700">
+                    <p>Укажите дату свадьбы в разделе «Детали свадьбы», чтобы видеть таймер обратного отсчёта и другие полезные функции.</p>
+                </div>
+                <div class="mt-3 flex gap-2">
+                    <button @click="openEditWeddingDetails" 
+                            class="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-pink-600 hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500">
+                        Указать дату
+                    </button>
+                    <button @click="dateNotificationVisible = false" 
+                            class="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-pink-500">
+                        Закрыть
+                    </button>
+                </div>
+            </div>
+            <div class="ml-4 flex-shrink-0 flex">
+                <button @click="dateNotificationVisible = false" class="inline-flex text-gray-400 hover:text-gray-500">
+                    <span class="sr-only">Закрыть</span>
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</Teleport> -->
 
 <style scoped>
 .bg-black-opacity-50{
