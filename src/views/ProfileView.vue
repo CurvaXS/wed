@@ -8,15 +8,126 @@ const authStore = useAuthStore();
 const isLoading = ref(false);
 const errorMessage = ref('');
 const successMessage = ref('');
-const API_URL = ref('http://127.0.0.1:8000/api/v1/')
+// const API_URL = ref('http://127.0.0.1:8000/api/v1/')
 const dateNotificationVisible = ref(false);
 const isEditingWeddingDetails = ref(false); // Флаг для модального окна редактирования деталей свадьбы
 
+// Загрузка данных при инициализации
+onMounted(() => {
+  loadProfile();
+});
+
+// Загрузка данных профиля из API
+// const loadProfile = async () => {
+//   isLoading.value = true;
+//   errorMessage.value = '';
+  
+//   try {
+//     // Загружаем профиль пользователя
+//     const profileData = await profileService.getUserProfile();
+//     console.log('Загруженные данные профиля:', profileData);
+    
+//     // Заполняем данные профиля пары, если они есть
+//     if (profileData.couple_profile) {
+//       coupleProfile.value = {
+//         avatar: profileData.avatar || null,
+//         brideName: profileData.couple_profile.bride_name || '',
+//         groomName: profileData.couple_profile.groom_name || '',
+//         aboutUs: profileData.couple_profile.about_us || ''
+//       };
+//     }
+    
+//     // Заполняем детали свадьбы, если они есть
+//     if (profileData.couple_profile && profileData.couple_profile.wedding_details) {
+//       const wd = profileData.couple_profile.wedding_details;
+//       weddingDetails.value = {
+//         date: wd.date || '',
+//         time: wd.time || '',
+//         venue: wd.venue || '',
+//         address: wd.address || '',
+//         dressCode: wd.dress_code || ''
+//       };
+      
+//       // Отладочная информация по дате свадьбы
+//       console.log('Загружена дата свадьбы:', weddingDetails.value.date);
+//     }
+    
+//     // Загружаем события истории пары
+//     try {
+//       const storyData = await profileService.getStoryEvents();
+//       if (storyData && Array.isArray(storyData)) {
+//         storyEvents.value = storyData;
+//       } else {
+//         // Если API не вернул данные, используем пример
+//         console.log('Нет данных истории в API, используем примеры');
+//         storyEvents.value = defaultStoryEvents;
+//       }
+//     } catch (error) {
+//       console.error('Ошибка при загрузке истории пары:', error);
+//       storyEvents.value = defaultStoryEvents;
+//     }
+    
+//     // Проверка и уведомление о дате свадьбы
+//     if (!weddingDetails.value.date) {
+//       setTimeout(() => {
+//         dateNotificationVisible.value = true;
+//       }, 1000);
+//     }
+    
+//     // Загружаем данные команды
+//     try {
+//       const teamData = await profileService.getTeamMembers();
+//       if (teamData && Array.isArray(teamData)) {
+//         teamMembers.value = teamData;
+//       }
+//     } catch (error) {
+//       console.error('Ошибка при загрузке членов команды:', error);
+//     }
+    
+//   } catch (error) {
+//     console.error('Ошибка при загрузке профиля:', error);
+//     errorMessage.value = 'Произошла ошибка при загрузке данных профиля';
+//   } finally {
+//     isLoading.value = false;
+//   }
+// };
+
 // Вычисляемое свойство для расчета дней до свадьбы
 const daysUntilWedding = computed(() => {
-    if (!weddingDetails.value.date) return null;
+    // Если дата свадьбы не установлена, возвращаем null
+    if (!weddingDetails.value.date) {
+        console.log('Дата свадьбы отсутствует');
+        return null;
+    }
     
-    const weddingDate = new Date(weddingDetails.value.date);
+    let weddingDate;
+    
+    // Проверяем формат даты и преобразуем при необходимости
+    if (typeof weddingDetails.value.date === 'string') {
+        // Если дата в формате DD.MM.YYYY, конвертируем в YYYY-MM-DD
+        if (weddingDetails.value.date.includes('.')) {
+            const parts = weddingDetails.value.date.split('.');
+            if (parts.length === 3) {
+                weddingDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                console.log('Преобразована дата из DD.MM.YYYY:', weddingDetails.value.date, '->', weddingDate);
+            } else {
+                weddingDate = new Date(weddingDetails.value.date);
+            }
+        } else {
+            // Предполагаем, что это уже формат ISO или другой валидный формат
+            weddingDate = new Date(weddingDetails.value.date);
+        }
+    } else {
+        // Если дата уже объект Date
+        weddingDate = new Date(weddingDetails.value.date);
+    }
+    
+    // Проверяем, что объект даты валидный
+    if (isNaN(weddingDate.getTime())) {
+        console.error('Невалидная дата свадьбы:', weddingDetails.value.date);
+        return null;
+    }
+    
     const today = new Date();
     
     // Сбрасываем часы, минуты, секунды для корректного сравнения только дат
@@ -26,6 +137,8 @@ const daysUntilWedding = computed(() => {
     // Вычисляем разницу в миллисекундах и переводим в дни
     const diffTime = weddingDate.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    console.log('Дата свадьбы:', weddingDate, 'Разница в днях:', diffDays);
     
     return diffDays > 0 ? diffDays : null; // Возвращаем null, если дата в прошлом
 });
@@ -57,7 +170,11 @@ const posts = ref([]);
 const postImageFile = ref(null);
 
 // Состояние истории пары
-const storyEvents = ref([
+// Используем пустой массив, который будет заполнен из API
+const storyEvents = ref([]);
+
+// Пример данных для тестирования, если API не вернет данные
+const defaultStoryEvents = [
     {
         id: 1,
         title: 'Первая встреча',
@@ -96,7 +213,7 @@ const storyEvents = ref([
         description: 'Мы планируем нашу свадьбу и с нетерпением ждем этого дня! Хотим, чтобы это был самый прекрасный день в нашей жизни, наполненный любовью, радостью и теплом наших близких.',
         photo: null
     }
-]);
+];
 
 // Флаги для управления модальными окнами
 const showPhotoUploadModal = ref(false);
@@ -231,27 +348,43 @@ const saveWeddingDetails = async () => {
         isLoading.value = true;
         errorMessage.value = '';
         
-        // Получаем текущую дату для отладки
-        console.log('Отправляемая дата (исходная):', editedWeddingDetails.value.date);
-        console.log('Детали для отправки:', JSON.stringify(editedWeddingDetails.value));
-        
-        // Обеспечиваем, что дата отправляется в формате ISO String
+        // Получаем текущую дату и преобразуем ее в формат, ожидаемый API
         let dateToSend = editedWeddingDetails.value.date;
         
-        // Проверяем, не является ли дата строкой в формате dd.mm.yyyy
-        if (dateToSend && dateToSend.includes('.')) {
-            const parts = dateToSend.split('.');
-            if (parts.length === 3) {
-                const newDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-                if (!isNaN(newDate.getTime())) {
-                    dateToSend = newDate.toISOString().split('T')[0]; // YYYY-MM-DD
-                    console.log('Дата преобразована в ISO:', dateToSend);
+        console.log('Исходная дата для отправки:', dateToSend, typeof dateToSend);
+        
+        // Обрабатываем разные форматы даты
+        if (dateToSend) {
+            // Для формата dd.mm.yyyy (русский формат)
+            if (typeof dateToSend === 'string' && dateToSend.includes('.')) {
+                const parts = dateToSend.split('.');
+                if (parts.length === 3) {
+                    const newDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
+                    if (!isNaN(newDate.getTime())) {
+                        dateToSend = newDate.toISOString().split('T')[0]; // YYYY-MM-DD
+                        console.log('Дата преобразована из dd.mm.yyyy в ISO:', dateToSend);
+                    }
+                }
+            } 
+            // Для объекта Date
+            else if (dateToSend instanceof Date && !isNaN(dateToSend.getTime())) {
+                dateToSend = dateToSend.toISOString().split('T')[0]; // YYYY-MM-DD
+                console.log('Дата преобразована из объекта Date в ISO:', dateToSend);
+            }
+            // Для других строковых форматов проверяем и конвертируем
+            else if (typeof dateToSend === 'string') {
+                const date = new Date(dateToSend);
+                if (!isNaN(date.getTime())) {
+                    dateToSend = date.toISOString().split('T')[0]; // YYYY-MM-DD
+                    console.log('Дата преобразована в стандартный ISO:', dateToSend);
                 }
             }
         }
         
+        console.log('Итоговая дата для отправки:', dateToSend);
+        
         const response = await profileService.updateWeddingDetails({
-            date: dateToSend, // Отправляем ISO дату
+            date: dateToSend, // Отправляем дату в формате YYYY-MM-DD
             time: editedWeddingDetails.value.time,
             venue: editedWeddingDetails.value.venue,
             address: editedWeddingDetails.value.address,
@@ -260,7 +393,7 @@ const saveWeddingDetails = async () => {
         
         console.log('Ответ сервера:', response);
         
-        // Сохраняем ISO формат даты для API
+        // Обрабатываем дату из ответа сервера
         const responseDate = response.date;
         let displayDate = '';
         
@@ -269,6 +402,7 @@ const saveWeddingDetails = async () => {
                 const date = new Date(responseDate);
                 if (!isNaN(date.getTime())) {
                     displayDate = date.toLocaleDateString('ru-RU');
+                    console.log('Дата из ответа API форматирована:', responseDate, '->', displayDate);
                 }
             }
         } catch (e) {
@@ -287,6 +421,9 @@ const saveWeddingDetails = async () => {
         };
         
         console.log('Обновлено состояние weddingDetails:', weddingDetails.value);
+        
+        // Принудительно обновляем вычисляемое свойство daysUntilWedding
+        console.log('Обновлен счетчик дней до свадьбы:', daysUntilWedding.value);
         
         successMessage.value = 'Детали свадьбы успешно обновлены';
         showEditWeddingDetailsModal.value = false;
@@ -520,28 +657,89 @@ const handleStoryPhotoUpload = (event) => {
     }
 };
 
-const saveStory = () => {
-    const updatedStory = {
-        ...editedStory.value,
-        photo: storyPhotoPreview.value
-    };
+const saveStory = async () => {
+    isLoading.value = true;
+    errorMessage.value = '';
     
-    if (editingStory.value) {
-        const index = storyEvents.value.findIndex(s => s.id === updatedStory.id);
-        if (index !== -1) {
-            storyEvents.value[index] = updatedStory;
+    try {
+        // Подготавливаем данные для отправки
+        const storyData = {
+            ...editedStory.value
+        };
+        
+        // Обрабатываем фото, если оно изменилось
+        if (storyPhotoPreview.value && storyPhotoPreview.value instanceof File) {
+            storyData.photo = storyPhotoPreview.value;
         }
-    } else {
-        storyEvents.value.push(updatedStory);
+        
+        let result;
+        
+        if (editingStory.value) {
+            // Обновляем существующее событие через API
+            console.log('Обновляем событие истории:', storyData.id);
+            result = await profileService.updateStoryEvent(storyData.id, storyData);
+            
+            // Обновляем локальное состояние
+            const index = storyEvents.value.findIndex(s => s.id === storyData.id);
+            if (index !== -1) {
+                storyEvents.value[index] = result;
+            }
+            
+            successMessage.value = 'Событие истории успешно обновлено';
+        } else {
+            // Создаем новое событие через API
+            console.log('Создаем новое событие истории');
+            result = await profileService.createStoryEvent(storyData);
+            
+            // Добавляем в локальное состояние
+            storyEvents.value.push(result);
+            
+            successMessage.value = 'Новое событие истории добавлено';
+        }
+        
+        // Очищаем форму и закрываем модальное окно
+        storyPhotoPreview.value = null;
+        showStoryModal.value = false;
+        
+    } catch (error) {
+        console.error('Ошибка при сохранении события истории:', error);
+        errorMessage.value = 'Произошла ошибка при сохранении события истории';
+    } finally {
+        isLoading.value = false;
+        
+        // Скрываем сообщение об успехе через 3 секунды
+        if (successMessage.value) {
+            setTimeout(() => {
+                successMessage.value = '';
+            }, 3000);
+        }
     }
-    
-    storyPhotoPreview.value = null;
-    showStoryModal.value = false;
 };
 
-const removeStory = (id) => {
+const removeStory = async (id) => {
     if (confirm('Вы уверены, что хотите удалить эту историю?')) {
-        storyEvents.value = storyEvents.value.filter(s => s.id !== id);
+        isLoading.value = true;
+        errorMessage.value = '';
+        
+        try {
+            // Удаляем событие через API
+            await profileService.deleteStoryEvent(id);
+            
+            // Удаляем из локального состояния
+            storyEvents.value = storyEvents.value.filter(s => s.id !== id);
+            
+            successMessage.value = 'Событие истории успешно удалено';
+            
+            // Скрываем сообщение об успехе через 3 секунды
+            setTimeout(() => {
+                successMessage.value = '';
+            }, 3000);
+        } catch (error) {
+            console.error('Ошибка при удалении события истории:', error);
+            errorMessage.value = 'Произошла ошибка при удалении события';
+        } finally {
+            isLoading.value = false;
+        }
     }
 };
 
@@ -562,6 +760,23 @@ const formatDate = (date) => {
         return `${diffDays} дней назад`;
     } else {
         return postDate.toLocaleDateString('ru-RU');
+    }
+};
+
+// Функция для форматирования даты свадьбы
+const formatWeddingDate = (date) => {
+    if (!date) return '';
+    
+    try {
+        const weddingDate = new Date(date);
+        if (isNaN(weddingDate.getTime())) {
+            console.warn('Невалидная дата свадьбы при форматировании:', date);
+            return '';
+        }
+        return weddingDate.toLocaleDateString('ru-RU');
+    } catch (e) {
+        console.error('Ошибка при форматировании даты свадьбы:', e);
+        return '';
     }
 };
 
@@ -645,26 +860,23 @@ const loadTeamMembers = async () => {
     }
 };
 
-// Функция для загрузки профиля и всех связанных данных
+// Основная функция загрузки профиля
 const loadProfile = async () => {
+    isLoading.value = true;
+    errorMessage.value = '';
+    
     try {
-        isLoading.value = true;
-        errorMessage.value = '';
-        
-        // Получаем профиль пользователя
-        const user = await profileService.getUserProfile();
-        console.log('Полученный профиль пользователя:', user);
+        // Загружаем профиль пользователя
+        const user = authStore.user;
         
         if (user && user.couple_profile) {
             // Безопасно извлекаем данные профиля пары
             const coupleData = user.couple_profile;
             coupleProfile.value = {
-                id: coupleData.id, // Сохраняем ID профиля пары для использования в запросах
+                id: coupleData.id,
                 avatar: user.avatar,
-                // Используем имя и фамилию пользователя в качестве основного имени
                 brideName: user.first_name || '',
                 groomName: user.last_name || '',
-                // Добавляем имя и фамилию партнера из профиля пары
                 partnerFirstName: coupleData.partner_first_name || '',
                 partnerLastName: coupleData.partner_last_name || '',
                 aboutUs: coupleData.about_us || ''
@@ -689,9 +901,6 @@ const loadProfile = async () => {
             
             if (coupleData.wedding_details) {
                 const details = coupleData.wedding_details;
-                
-                // Сохраняем исходную дату в ISO формате для корректной работы с формами и API
-                // но также создаем отформатированную версию для отображения
                 const rawDate = details.date || '';
                 let displayDate = '';
                 
@@ -706,10 +915,9 @@ const loadProfile = async () => {
                     console.warn('Ошибка при обработке даты свадебных деталей:', e);
                 }
                 
-                // Сохраняем оригинальную дату в ISO формате, а не локализованную строку
                 weddingDetails.value = {
-                    date: rawDate, // Сохраняем ISO формат для API
-                    displayDate: displayDate, // Для отображения в UI
+                    date: rawDate,
+                    displayDate: displayDate,
                     time: details.time || '',
                     venue: details.venue || '',
                     address: details.address || '',
@@ -717,13 +925,9 @@ const loadProfile = async () => {
                 };
             }
             
-            console.log('Обработанный профиль пары:', coupleProfile.value);
-            console.log('Обработанные детали свадьбы:', weddingDetails.value);
-            
             // Показать уведомление, если дата свадьбы не указана
             if (!weddingDetails.value.date) {
                 dateNotificationVisible.value = true;
-                // Автоматически скрыть уведомление через 10 секунд
                 setTimeout(() => {
                     dateNotificationVisible.value = false;
                 }, 10000);
@@ -829,7 +1033,7 @@ if (posts.value.length === 0) {
                 <div class="md:ml-auto bg-white bg-opacity-20 rounded-xl p-6">
                     <div class="grid grid-cols-1 gap-4 text-center text-black">
                         <div>
-                            <div v-if="daysUntilWedding" class="text-2xl font-bold">{{ daysUntilWedding }}</div>
+                            <div v-if="daysUntilWedding !== null" class="text-2xl font-bold">{{ daysUntilWedding }}</div>
                             <div v-else class="text-2xl font-bold text-pink-400">—</div>
                             <div class="text-sm">дней до свадьбы</div>
                         </div>
@@ -854,10 +1058,10 @@ if (posts.value.length === 0) {
             <div class="border-b border-gray-200 mb-8">
                 <nav class="flex space-x-8">
                     <button class="tab-active py-4 px-1 text-sm font-medium border-b-2 border-pink-500 text-pink-600">Профиль</button>
-                    <button class="text-gray-500 hover:text-gray-700 py-4 px-1 text-sm font-medium">Наша история</button>
+                    <!-- <button class="text-gray-500 hover:text-gray-700 py-4 px-1 text-sm font-medium">Наша история</button>
                     <button class="text-gray-500 hover:text-gray-700 py-4 px-1 text-sm font-medium">Фото</button>
                     <button class="text-gray-500 hover:text-gray-700 py-4 px-1 text-sm font-medium">Гости</button>
-                    <button class="text-gray-500 hover:text-gray-700 py-4 px-1 text-sm font-medium">Поставщики</button>
+                    <button class="text-gray-500 hover:text-gray-700 py-4 px-1 text-sm font-medium">Поставщики</button> -->
                 </nav>
             </div>
             
@@ -900,13 +1104,12 @@ if (posts.value.length === 0) {
                                 <h3 class="font-medium text-gray-500 mb-1">История знакомства</h3>
                                 <p class="text-sm">{{ coupleProfile.aboutUs }}</p>
                             </div>
-                            <div>
-                                <h3 class="font-medium text-gray-500 mb-1">Мы познакомились</h3>
-                                <p>15 августа 2020 года на дне рождения общего друга</p>
-                            </div>
-                            <div>
-                                <h3 class="font-medium text-gray-500 mb-1">Предложение</h3>
-                                <p>Михаил сделал предложение 14 февраля 2023 года в Париже</p>
+                            <!-- Динамически отображаем загруженные события истории пары -->
+                            <div v-for="story in storyEvents" :key="story.id" class="mt-4">
+                                <h3 class="font-medium text-gray-500 mb-1">{{ story.title }}</h3>
+                                <p class="mb-2">{{ story.description }}</p>
+                                <p v-if="story.date" class="text-xs text-gray-400">{{ new Date(story.date).toLocaleDateString('ru-RU') }}</p>
+                                <img v-if="story.photo" :src="story.photo" class="mt-2 rounded-lg w-full h-auto max-h-48 object-cover" :alt="story.title">
                             </div>
                         </div>
                     </div>
@@ -923,7 +1126,9 @@ if (posts.value.length === 0) {
                         <div class="space-y-4">
                             <div>
                                 <h3 class="font-medium text-gray-500 mb-1">Дата</h3>
-                                <span v-if="weddingDetails.date">Свадьба {{ new Date(weddingDetails.date).toLocaleDateString('ru-RU') }}</span>
+                                <span v-if="weddingDetails.date">
+                                    Свадьба {{ formatWeddingDate(weddingDetails.date) }}
+                                </span>
                                 <span v-else class="text-pink-400">Дата свадьбы не указана</span>
                             </div>
                             <div>

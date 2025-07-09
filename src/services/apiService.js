@@ -863,6 +863,120 @@ const profileService = {
     return await response.json();
   },
   
+  // Методы для работы с историей пары (story events)
+  // Получение истории пары
+  getStoryEvents: () => apiRequest('users/story-events/'),
+  
+  // Создание события истории пары
+  createStoryEvent: async (storyData) => {
+    const formData = new FormData();
+    
+    // Добавляем все поля в formData
+    Object.keys(storyData).forEach(key => {
+      if (storyData[key] !== null && storyData[key] !== undefined) {
+        // Обработка файла изображения
+        if (key === 'photo' && storyData[key] instanceof File) {
+          formData.append('photo', storyData[key]);
+        } else {
+          formData.append(key, storyData[key]);
+        }
+      }
+    });
+    
+    const url = `${API_URL}users/story-events/`;
+    const token = localStorage.getItem('token');
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Token ${token}`
+      },
+      body: formData
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw {
+        status: response.status,
+        message: errorData.detail || 'Произошла ошибка при создании события истории',
+        errors: errorData
+      };
+    }
+    
+    return await response.json();
+  },
+  
+  // Обновление события истории пары
+  updateStoryEvent: async (id, storyData) => {
+    const formData = new FormData();
+    
+    // Добавляем все поля в formData
+    Object.keys(storyData).forEach(key => {
+      if (storyData[key] !== null && storyData[key] !== undefined) {
+        // Обработка файла изображения
+        if (key === 'photo' && storyData[key] instanceof File) {
+          formData.append('photo', storyData[key]);
+        } else {
+          formData.append(key, storyData[key]);
+        }
+      }
+    });
+    
+    const url = `${API_URL}users/story-events/${id}/`;
+    const token = localStorage.getItem('token');
+    
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Token ${token}`
+      },
+      body: formData
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw {
+        status: response.status,
+        message: errorData.detail || 'Произошла ошибка при обновлении события истории',
+        errors: errorData
+      };
+    }
+    
+    return await response.json();
+  },
+  
+  // Удаление события истории пары
+  deleteStoryEvent: (id) => apiRequest(`users/story-events/${id}/`, 'DELETE'),
+  
+  // Обновление информации "О нас"
+  updateAboutUs: async (aboutUsData) => {
+    // Используем прямой вызов API для обновления поля about_us
+    const formData = new FormData();
+    formData.append('about_us', aboutUsData);
+    
+    const url = `${API_URL}users/profile/update-couple-profile/`;
+    const token = localStorage.getItem('token');
+    
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Token ${token}`
+      },
+      body: formData
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw {
+        status: response.status,
+        message: errorData.detail || 'Произошла ошибка при обновлении информации "О нас"',
+        errors: errorData
+      };
+    }
+    
+    return await response.json();
+  },
+  
   // Управление командой
   getTeamMembers: () => apiRequest('users/team-members/'),
   createTeamMember: async (memberData) => {

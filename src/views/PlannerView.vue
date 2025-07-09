@@ -44,7 +44,7 @@
               <div v-else class="flex items-center space-x-3">
                 <span class="text-gray-700">
                   Дата свадьбы:
-                  <span class="font-semibold">{{ formatDate(weddingDate) }}</span>
+                  <span class="font-semibold">{{ weddingDisplayDate }}</span>
                    
                 </span>
                 <!-- <button @click="showDatePicker = true" class="p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-indigo-600 transition-colors duration-300">
@@ -55,7 +55,7 @@
           </div>
           
           <!-- Таймер до свадьбы -->
-          <!-- <div v-if="weddingDate" class="bg-white shadow-sm wedding-timer-bg rounded-xl p-6 mb-8">
+          <div v-if="weddingDate" class="bg-white shadow-sm wedding-timer-bg rounded-xl p-6 mb-8">
             <h3 class="text-xl font-semibold mb-4 text-center">До свадьбы осталось</h3>
             <div class="flex flex-wrap justify-center gap-4">
               <div class="bg-white bg-opacity-20 shadow-sm rounded-lg px-6 py-4 text-center min-w-24">
@@ -71,7 +71,7 @@
                 <span class="text-sm opacity-80">минут</span>
               </div>
             </div>
-          </div> -->
+          </div> 
           
           <!-- Карточки с информацией -->
           <div class="dashboard-grid mb-8">
@@ -2808,9 +2808,9 @@ const loadWeddingDetails = async () => {
     console.log('Получены детали свадьбы из API:', weddingDetails);
     
     // Проверяем, что детали свадьбы не пустые и есть дата
-    if (weddingDetails && weddingDetails.wedding_date) {
+    if (weddingDetails && weddingDetails.date) {
       // Сохраняем дату в исходном формате для вычислений
-      weddingDate.value = weddingDetails.wedding_date;
+      weddingDate.value = weddingDetails.date;
       console.log('Установлена дата свадьбы из API:', weddingDate.value);
       
       // Форматируем дату для отображения
