@@ -112,7 +112,16 @@
 
             <!-- Services Card -->
             <div class="bg-gray-50 rounded-xl p-6 mb-8">
-              <h2 class="text-xl font-bold mb-4">Услуги и цены</h2>
+              <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">Услуги и цены</h2>
+                <button 
+                  @click="toggleCurrency" 
+                  class="bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-medium px-3 py-1 rounded-lg transition flex items-center text-sm"
+                >
+                  {{ currency === 'RUB' ? 'Рубли ₽' : 'Сомы' }} 
+                  <i class="fas fa-exchange-alt ml-2"></i>
+                </button>
+              </div>
               
               <!-- Загрузка -->
               <div v-if="servicesLoading" class="text-center py-4">
@@ -141,7 +150,7 @@
               >
                 <div class="flex justify-between items-start mb-2">
                   <h3 class="font-bold">{{ service.title }}</h3>
-                  <span class="text-indigo-600 font-bold">{{ formatPrice(service.price) }}</span>
+                  <span class="text-indigo-600 font-bold">{{ formatServicePrice(service.price) }}</span>
                 </div>
                 <p class="text-gray-600">{{ service.description }}</p>
                 <div class="mt-3 flex justify-end">
@@ -281,9 +290,9 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, RouterLink } from 'vue-router';
+import { getSpecialistById, getSpecialistServices, getSpecialistPortfolio, getSpecialistReviews, formatPrice } from '@/services/apiService';
 import { useAuthStore } from '@/stores/auth';
-import { catalogService } from '@/services/apiService';
 
 // Получаем ID специалиста из маршрута
 const route = useRoute();
@@ -293,6 +302,7 @@ const specialistId = route.params.id;
 const specialist = ref(null);
 const loading = ref(true);
 const error = ref(null);
+const currency = ref('RUB'); // текущая валюта для отображения цен (RUB - рубли, KGS - сомы)
 const services = ref([]);
 const servicesLoading = ref(false);
 const servicesError = ref(null);
@@ -363,9 +373,22 @@ const orderService = (service) => {
   alert(`Услуга "${service.title}" будет доступна для заказа в ближайшее время`);
 };
 
+// Функция переключения валюты
+const toggleCurrency = () => {
+  currency.value = currency.value === 'RUB' ? 'KGS' : 'RUB';
+  // Сохраняем выбор пользователя в localStorage
+  localStorage.setItem('preferred_currency', currency.value);
+};
+
 // Загрузка данных при монтировании компонента
 onMounted(() => {
   fetchSpecialist();
+  
+  // Загружаем предпочтительную валюту из localStorage
+  const preferredCurrency = localStorage.getItem('preferred_currency');
+  if (preferredCurrency) {
+    currency.value = preferredCurrency;
+  }
 });
 
 // Вспомогательные функции
@@ -412,9 +435,9 @@ const formatDateMonth = (dateString) => {
   return new Intl.DateTimeFormat('ru-RU', { month: 'long' }).format(date);
 };
 
-const formatPrice = (price) => {
-  if (!price) return '0 ₽';
-  return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(price);
+// Функция обертка для formatPrice с учетом текущей валюты
+const formatServicePrice = (price) => {
+  return formatPrice(price, currency.value);
 };
 </script>
 

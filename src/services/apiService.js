@@ -5,6 +5,32 @@
 const API_URL = 'https://makarsoda.pythonanywhere.com/api/v1/';
 // const API_URL = 'http://mmpysh9z.beget.tech/api/v1/';
 
+const MONEY_API = 'https://www.cbr-xml-daily.ru/daily_json.js'
+
+// Курс конвертации рублей в сомы (примерный курс на июль 2025)
+const RUB_TO_KGS_RATE = 1.17; // 1 рубль = 1.17 сома
+
+// Функция для конвертации рублей в сомы
+const convertRubToKgs = (amountInRub) => {
+  if (!amountInRub || isNaN(amountInRub)) return 0;
+  return Math.round(amountInRub * RUB_TO_KGS_RATE);
+};
+
+// Функция для форматирования цены в зависимости от валюты
+const formatPrice = (price, currency = 'RUB') => {
+  if (!price || isNaN(price)) return currency === 'RUB' ? '0 ₽' : '0 сом';
+  
+  const amount = currency === 'KGS' ? convertRubToKgs(price) : price;
+  const symbol = currency === 'KGS' ? 'сом' : '₽';
+  
+  return new Intl.NumberFormat('ru-RU', { 
+    maximumFractionDigits: 0
+  }).format(amount) + ' ' + symbol;
+};
+
+// Экспортируем функции конвертации валют
+export { convertRubToKgs, formatPrice };
+
 
 // Заголовки по умолчанию
 const getHeaders = () => {
