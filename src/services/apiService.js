@@ -12,20 +12,43 @@ const RUB_TO_KGS_RATE = 1.17; // 1 рубль = 1.17 сома
 
 // Функция для конвертации рублей в сомы
 const convertRubToKgs = (amountInRub) => {
-  if (!amountInRub || isNaN(amountInRub)) return 0;
-  return Math.round(amountInRub * RUB_TO_KGS_RATE);
+  // Отладочный вывод для проверки типов данных
+  console.log('Получена сумма для конвертации:', amountInRub, typeof amountInRub);
+  
+  // Преобразование в число, если пришла строка
+  const amount = Number(amountInRub);
+  
+  // Проверка на некорректные значения
+  if (amount === 0 || isNaN(amount)) return 0;
+  
+  return Math.round(amount * RUB_TO_KGS_RATE);
 };
 
 // Функция для форматирования цены в зависимости от валюты
 const formatPrice = (price, currency = 'RUB') => {
-  if (!price || isNaN(price)) return currency === 'RUB' ? '0 ₽' : '0 сом';
+  // Отладочный вывод
+  console.log('Цена для форматирования:', price, typeof price, 'Валюта:', currency);
+
+  // Преобразование входного значения в число
+  let numericPrice = Number(price);
   
-  const amount = currency === 'KGS' ? convertRubToKgs(price) : price;
+  // Если цена нулевая или невалидная, возвращаем нулевое значение
+  if (numericPrice === 0 || isNaN(numericPrice)) {
+    console.log('Нулевая или невалидная цена:', price);
+    return currency === 'RUB' ? '0 ₽' : '0 сом';
+  }
+  
+  // Конвертируем в сомы если нужно
+  const amount = currency === 'KGS' ? convertRubToKgs(numericPrice) : numericPrice;
   const symbol = currency === 'KGS' ? 'сом' : '₽';
   
-  return new Intl.NumberFormat('ru-RU', { 
+  // Форматируем и возвращаем результат
+  const formattedPrice = new Intl.NumberFormat('ru-RU', { 
     maximumFractionDigits: 0
   }).format(amount) + ' ' + symbol;
+  
+  console.log('Отформатированная цена:', formattedPrice);
+  return formattedPrice;
 };
 
 // Экспортируем функции конвертации валют

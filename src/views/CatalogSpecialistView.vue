@@ -151,6 +151,8 @@
                 <div class="flex justify-between items-start mb-2">
                   <h3 class="font-bold">{{ service.title }}</h3>
                   <span class="text-indigo-600 font-bold">{{ formatServicePrice(service.price) }}</span>
+                  <!-- Отладочный вывод цен -->
+                  <span v-if="false">{{ console.log('Сервис:', service.title, 'Цена:', service.price, typeof service.price) }}</span>
                 </div>
                 <p class="text-gray-600">{{ service.description }}</p>
                 <div class="mt-3 flex justify-end">

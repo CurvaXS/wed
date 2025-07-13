@@ -422,7 +422,9 @@ onMounted(async () => {
                     </div>
                     <div class="text-gray-500 text-sm flex items-center mb-4">
                       <i class="fas fa-money-bill-alt mr-1"></i>
-                      <span>{{ formatPrice(specialist.price_from || 0, currency) }} - {{ formatPrice(specialist.price_to || 0, currency) }}</span>
+                      <span>{{ formatPrice(specialist.price_range_min || 0, currency) }} - {{ formatPrice(specialist.price_range_max || 0, currency) }}</span>
+                      <!-- Отладочный вывод, удалить после отладки -->
+                      <span v-if="false">{{ console.log('Цены специалиста:', specialist.id, specialist.price_range_min, specialist.price_range_max) }}</span>
                     </div>
                     <RouterLink :to="`/catalog/specialist/${specialist.id}`" class="text-pink-500 font-medium hover:text-pink-600 flex items-center">
                       Подробнее <i class="fas fa-chevron-right ml-1 text-xs"></i>
