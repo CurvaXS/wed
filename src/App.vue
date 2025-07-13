@@ -223,9 +223,7 @@ onUnmounted(() => {
         <div class="container mx-auto px-4">
             <div class="flex flex-col items-center justify-center">
                 <div class="mb-8">
-                    <h3 class="text-xl font-bold mb-4 flex items-center">
-                        <i class="fas fa-heart mr-2 text-pink-400"></i> СвадьбаГид
-                    </h3>
+                    <img src="@/assets/img/logo.png" alt="" style="max-width: 150px;">
                 </div>
                 
                 <!-- Меню в подвале (идентичное шапке) -->

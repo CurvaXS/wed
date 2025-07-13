@@ -88,11 +88,16 @@ const handleSubmit = async () => {
             password_confirm: form.value.confirmPassword, // Используем значение из confirmPassword
             first_name: form.value.firstName,
             last_name: form.value.lastName,
-            user_type: form.value.role, // Тип пользователя: couple или specialist
-            // Добавляем данные второго супруга для роли "пара"
-            partner_first_name: form.value.role === 'couple' ? form.value.partnerFirstName : '',
-            partner_last_name: form.value.role === 'couple' ? form.value.partnerLastName : ''
+            user_type: form.value.role // Тип пользователя: couple или specialist
         };
+        
+        // Добавляем данные второго супруга ТОЛЬКО для роли "пара"
+        if (form.value.role === 'couple') {
+            userData.partner_first_name = form.value.partnerFirstName;
+            userData.partner_last_name = form.value.partnerLastName;
+        }
+        
+        console.log('Отправляемые данные для регистрации:', userData);
         
         // Вызываем метод регистрации из хранилища auth
         const result = await authStore.register(userData);
