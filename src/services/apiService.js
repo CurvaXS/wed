@@ -114,9 +114,24 @@ const apiRequest = async (endpoint, method = 'GET', data = null, isFormData = fa
       // Если есть ошибка, пытаемся получить сообщение из ответа
       const errorData = await response.json().catch(() => ({}));
       console.error(`Ошибка ${response.status} при запросе к ${url}:`, errorData);
+      
+      // Формируем сообщение об ошибке, учитывая non_field_errors и другие возможные форматы ошибок
+      let errorMessage = 'Произошла ошибка при запросе к API';
+      
+      if (errorData.non_field_errors && errorData.non_field_errors.length > 0) {
+        // Если есть non_field_errors, используем первое сообщение
+        errorMessage = errorData.non_field_errors[0];
+      } else if (errorData.detail) {
+        // Если есть detail, используем его
+        errorMessage = errorData.detail;
+      } else if (typeof errorData === 'string') {
+        // Если ошибка пришла в виде строки
+        errorMessage = errorData;
+      }
+      
       throw {
         status: response.status,
-        message: errorData.detail || 'Произошла ошибка при запросе к API',
+        message: errorMessage,
         errors: errorData
       };
     }
@@ -139,9 +154,14 @@ const authService = {
   register: (userData) => apiRequest('users/register/', 'POST', userData),
   getCurrentUser: () => apiRequest('users/me/'),
   logout: () => {
-    localStorage.removeItem('token');
-    return Promise.resolve({ success: true });
-  }
+    // Clear tokens from localStorage
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+  },
+  // OTP Registration Methods
+  sendOTP: (phoneData) => apiRequest('users/send-otp/', 'POST', phoneData),
+  verifyOTP: (otpData) => apiRequest('users/verify-otp/', 'POST', otpData),
+  registerWithOTP: (userData) => apiRequest('users/register-with-otp/', 'POST', userData),
 };
 
 const catalogService = {

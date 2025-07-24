@@ -293,7 +293,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute, RouterLink } from 'vue-router';
-import { getSpecialistById, getSpecialistServices, getSpecialistPortfolio, getSpecialistReviews, formatPrice } from '@/services/apiService';
+import { catalogService, formatPrice } from '@/services/apiService';
 import { useAuthStore } from '@/stores/auth';
 
 // Получаем ID специалиста из маршрута

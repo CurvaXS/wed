@@ -341,14 +341,14 @@ onMounted(async () => {
         <div class="lg:w-3/4">
           <!-- Sorting -->
           <div class="bg-white rounded-xl shadow-sm p-4 mb-6 flex flex-col sm:flex-row justify-between items-center">
-            <div>
+            <div class="mobile-wiew">
             <!-- Results Header -->
-              <div class="flex justify-between items-center mb-6">
+              <div class="flex justify-between items-center mb-6 results-header-mobile">
                 <h2 class="text-xl font-bold">
                   Найдено {{ filteredSpecialists.length }} специалистов
                 </h2>
                 
-                <div class="flex items-center gap-4">
+                <div class="flex items-center gap-4 results-header-mobile">
                   <!-- Currency Toggle -->
                   <div class="flex items-center">
                     <span class="text-sm mr-2">Валюта:</span>
@@ -590,8 +590,18 @@ onMounted(async () => {
   transform: translateY(-5px);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
+
+.mobile-wiew{
+  max-width: 100%;
+}
+
+@media (max-width: 610px) {
+  .results-header-mobile{
+    flex-direction: column;
+  }
+}
+
+
 </style>
 
-<style>
 
-</style>

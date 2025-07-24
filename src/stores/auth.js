@@ -72,8 +72,17 @@ export const useAuthStore = defineStore('auth', {
         
         return { success: true };
       } catch (error) {
-        this.error = error.message || 'Ошибка входа. Проверьте учетные данные.';
-        return { success: false, error: this.error };
+        // Используем сообщение об ошибке из ответа API, если оно есть
+        // или стандартное сообщение, если его нет
+        const errorMessage = error.message || 'Ошибка входа. Проверьте учетные данные.';
+        this.error = errorMessage;
+        console.error('Ошибка входа:', error);
+        return { 
+          success: false, 
+          error: errorMessage,
+          status: error.status,
+          errors: error.errors
+        };
       } finally {
         this.isLoading = false;
       }

@@ -127,12 +127,7 @@ const verifyOtp = async () => {
         currentStep.value = 3;
     } catch (error) {
         console.error('Ошибка при верификации OTP:', error);
-        // Проверяем наличие сообщения об ошибке от сервера
-        if (error.errors && error.errors.otp && error.errors.otp.length > 0) {
-            otpError.value = error.errors.otp[0]; // Берем первое сообщение об ошибке
-        } else {
-            otpError.value = error.message || 'Неверный код. Попробуйте снова.';
-        }
+        otpError.value = error.message || 'Неверный код. Попробуйте снова.';
     } finally {
         isVerifyingOtp.value = false;
     }
@@ -164,28 +159,14 @@ const handleSubmit = async () => {
         
         if (result.token) {
             localStorage.setItem('token', result.token);
-            
-            // Update auth store with the full user data from the response
             authStore.token = result.token;
             authStore.user = result.user;
             
-            // Set username based on user type and available data
-            let username;
-            if (result.user.user_type === 'couple' && result.user.couple_profile) {
-                // Use the names from the couple profile if available
-                username = `${result.user.first_name} и ${result.user.couple_profile.partner_first_name}`;
-            } else {
-                // Fallback to the form data
-                username = form.value.role === 'couple'
-                    ? `${form.value.firstName} и ${form.value.partnerFirstName}`
-                    : `${form.value.firstName} ${form.value.lastName}`;
-            }
-            
-            // Save username in localStorage and auth store
+            const username = form.value.role === 'couple' 
+                ? `${form.value.firstName} и ${form.value.partnerFirstName}`
+                : `${form.value.firstName} ${form.value.lastName}`;
+                
             localStorage.setItem('username', username);
-            authStore.user.username = username;
-            
-            // Redirect to profile
             router.push('/profile');
         } else {
             serverError.value = 'Ошибка при регистрации';
@@ -208,28 +189,16 @@ const handleSubmit = async () => {
 };
 
 // Handle OTP input
-const otpDigits = ref(Array(6).fill(''));
-
 const onOtpInput = (e, index) => {
     const value = e.target.value;
-    
-    // Update the specific digit
-    if (value) {
-        otpDigits.value[index] = value.slice(-1); // Take only the last character
-        otpCode.value = otpDigits.value.join('');
-        
-        // Move to next input if not the last one
-        if (index < 5) {
-            document.getElementById(`otp-${index + 1}`)?.focus();
-        }
+    if (value && index < 5) {
+        document.getElementById(`otp-${index + 1}`)?.focus();
     }
 };
 
 // Handle OTP backspace
 const onOtpKeyDown = (e, index) => {
     if (e.key === 'Backspace' && !e.target.value && index > 0) {
-        otpDigits.value[index - 1] = '';
-        otpCode.value = otpDigits.value.join('');
         document.getElementById(`otp-${index - 1}`)?.focus();
     }
 };
@@ -325,7 +294,7 @@ const onOtpKeyDown = (e, index) => {
                                     v-for="i in 6"
                                     :key="i"
                                     :id="`otp-${i-1}`"
-                                    :value="otpDigits[i-1]"
+                                    v-model="otpCode[i-1]"
                                     @input="onOtpInput($event, i-1)"
                                     @keydown.delete="onOtpKeyDown($event, i-1)"
                                     type="text"
@@ -333,7 +302,7 @@ const onOtpKeyDown = (e, index) => {
                                     inputmode="numeric"
                                     pattern="[0-9]*"
                                     class="w-12 h-12 text-2xl text-center border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                                    :class="{ 'border-pink-500': otpDigits[i-1] }"
+                                    :class="{ 'border-pink-500': otpCode[i-1] }"
                                 />
                             </div>
                             
