@@ -237,8 +237,16 @@ onMounted(() => {
             <h1 class="text-4xl md:text-5xl font-bold mb-6">Создайте свадьбу своей мечты</h1>
             <p class="text-xl mb-8 opacity-90">Планируйте свадьбу легко с нашим инструментом и находите лучших профессионалов в одном месте</p>
             <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-4">
-              <RouterLink to="/planner" class="btn-primary text-white px-8 py-3 rounded-full text-center font-medium">Начать планирование</RouterLink>
-              <RouterLink to="/catalog" class="bg-white text-pink-600 px-8 py-3 rounded-full text-center font-medium hover:bg-gray-100">Найти профессионалов</RouterLink>
+              <div v-if="authStore.isLoggedIn">
+                <RouterLink to="/planner" class="btn-primary text-white px-8 py-3 rounded-full text-center font-medium">Начать планирование</RouterLink>
+              </div>
+              <div v-if="!authStore.isLoggedIn">
+                <a @click="authStore.openLoginModal" class="btn-primary text-white px-8 py-3 rounded-full text-center font-medium" style="cursor: pointer;">Начать планирование</a>
+              </div>
+              <div class="">
+                <RouterLink to="/catalog" class="bg-white text-pink-600 px-8 py-3 rounded-full text-center font-medium hover:bg-gray-100">Найти профессионалов</RouterLink>
+              </div>
+              
               <!-- <button @click="authStore.openLoginModal" class="border-2 border-white text-white px-8 py-3 rounded-full text-center font-medium hover:bg-white/10">Войти</button> -->
             </div>
           </div>

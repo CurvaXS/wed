@@ -277,10 +277,10 @@ const onOtpKeyDown = (e, index) => {
                                 type="tel"
                                 id="phone"
                                 v-model="form.phone"
-                                placeholder="+7 (___) ___-____"
+                                placeholder="+992 (___) ___-____"
                                 class="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent transition"
                                 :class="{ 'border-red-500': errors.phone }"
-                                v-mask="'+7 (###) ###-####'"
+                                v-mask="'+992 (###) ###-####'"
                             />
                             <p v-if="errors.phone" class="mt-1 text-sm text-red-500">{{ errors.phone }}</p>
                         </div>

@@ -126,7 +126,9 @@ onUnmounted(() => {
                 
                 <nav class="hidden md:flex space-x-8">
                     <RouterLink to="/" class="nav-link text-gray-700 hover:text-pink-500">Главная</RouterLink> 
-                    <RouterLink v-if="!authStore.isSpecialist" to="/planner" class="nav-link text-gray-700 hover:text-pink-500">Планировщик</RouterLink>
+                    <div v-if="authStore.isLoggedIn">
+                        <RouterLink v-if="!authStore.isSpecialist" to="/planner" class="nav-link text-gray-700 hover:text-pink-500">Планировщик</RouterLink>
+                    </div>
                     <RouterLink to="/catalog" class="nav-link text-gray-700 hover:text-pink-500">Каталог</RouterLink>
                     <RouterLink to="/tenders" class="nav-link text-gray-700 hover:text-pink-500">Тендеры</RouterLink>
                     <!-- <RouterLink to="/real-weddings" class="nav-link text-gray-700 hover:text-pink-500">Реальные свадьбы</RouterLink> -->
