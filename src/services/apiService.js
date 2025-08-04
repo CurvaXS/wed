@@ -2,8 +2,9 @@
 
 // Базовый URL API
 // const API_URL = 'http://127.0.0.1:8000/api/v1/';  
-const API_URL = 'https://makarsoda.pythonanywhere.com/api/v1/';
+// const API_URL = 'https://makarsoda.pythonanywhere.com/api/v1/';
 // const API_URL = 'http://mmpysh9z.beget.tech/api/v1/';
+const API_URL = 'http://suxari0a.beget.tech/api/v1/';
 
 const MONEY_API = 'https://www.cbr-xml-daily.ru/daily_json.js'
 
